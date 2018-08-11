@@ -1,0 +1,121 @@
+---
+title: "Final_Regressions"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+d = read.csv('Final_241_Data_Shared.csv')
+#d = d[d$Guess_the_Cost <= 2000,]
+```
+
+```{r}
+standard_conf_int_95 = function(regression, n){
+  r = coeftest(regression, vcovHC(regression))
+  upper_bound = r[n,1] + 1.96* r[n, 2] 
+  lower_bound = r[n,1] -1.96* r[n, 2]
+  return (c(lower_bound,upper_bound))
+}
+```
+
+```{r}
+summary(d$Guess_the_Cost[d$French_Purchasing_Page == 1]) #French language only
+summary(d$Guess_the_Cost[d$German_Purchasing_Page == 1]) #German language only
+summary(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0]) #English language only
+
+```
+
+```{r}
+#with outliers
+r = lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page, data = d)
+
+coeftest(r, vcovHC(r))
+
+(French_95 = standard_conf_int_95(r,'French_Purchasing_Page'))
+(German_95 = standard_conf_int_95(r,'German_Purchasing_Page'))
+
+sd(d$Guess_the_Cost[d$French_Purchasing_Page == 1])
+sd(d$Guess_the_Cost[d$German_Purchasing_Page == 1])
+sd(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page ==0])
+```
+
+```{r}
+hist(d$Guess_the_Cost[d$French_Purchasing_Page == 1])
+hist(d$Guess_the_Cost[d$German_Purchasing_Page == 1])
+hist(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0])
+```
+
+
+
+
+```{r}
+(French_effect = cohen.d(Guess_the_Cost~French_Purchasing_Page, data = d[d$German_Purchasing_Page != 1,]))
+
+(German_effect = cohen.d(Guess_the_Cost~German_Purchasing_Page, data = d[d$French_Purchasing_Page != 1,]))
+```
+**Effect size is very small for both French and German effect**
+
+```{r}
+pwr.t2n.test(n1 = NROW(d[d$German_Purchasing_Page != 1 & d$French_Purchasing_Page != 1,]), n2 = NROW(d[d$French_Purchasing_Page == 1,]), d = .045, sig.level = .05)
+
+pwr.t2n.test(n1 = NROW(d[d$German_Purchasing_Page != 1 & d$French_Purchasing_Page != 1,]), n2 = NROW(d[d$German_Purchasing_Page == 1,]), d = 0.037, sig.level = .05)
+
+
+```
+
+**Due to the high variance in our Guess the Price outcome, our power for detecting an effect between French and English language was 9.8%, and our power for detecting an effect between German and English language was 8.22%.**
+
+**Gpower says effect size f is 0.022**
+
+```{r}
+pwr.1way(k=3, n=400, f=0.1, alpha=0.05) #Aiming for effect size of 0.1 - Power of 88%
+
+pwr.1way(k=3, n=400, f=0.022, alpha=0.05) #Got effect size of 0.022 - Power of 9.6%
+```
+
+```{r}
+r = lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page*US_Origin, data = d)
+
+coeftest(r, vcovHC(r))
+```
+
+```{r}
+r = lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * Long_Description + German_Purchasing_Page*Long_Description, data = d)
+
+coeftest(r, vcovHC(r))
+```
+```{r}
+French_cb = lm(French_Purchasing_Page ~ Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, data = d[d$German_Purchasing_Page != 1,])
+
+summary(French_cb)
+
+German_cb = lm(German_Purchasing_Page ~ Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, data = d[d$French_Purchasing_Page != 1,])
+
+summary(German_cb)
+
+French_German_cb = lm(French_Purchasing_Page ~ Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, data = d[d$French_Purchasing_Page == 1 | d$German_Purchasing_Page == 1 ,])
+
+summary(French_German_cb)
+```
+
+**p-values greater than .05 for all 3 regressions --> Covariate balance check shows that we cannot reject the null hypothesis that our covariates have no predictive power over our treatment variable**
+
+```{r}
+r = lm(Purchase_50 ~French_Purchasing_Page + German_Purchasing_Page, data = d)
+coeftest(r, vcovHC(r))
+
+```
+
+```{r}
+r = lm(Purchase_35 ~French_Purchasing_Page + German_Purchasing_Page, data = d)
+coeftest(r, vcovHC(r))
+```
+
+```{r}
+r = lm(Purchase_20 ~French_Purchasing_Page + German_Purchasing_Page, data = d)
+coeftest(r, vcovHC(r))
+```

@@ -1,0 +1,25 @@
+---
+title: "Final_investigations"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath("./"))
+d = read.xlsx('Final_241_Data_Shared.xlsx')
+```
+
+```{r}
+DT<-data.table(d)
+DT_sub500<-DT[Guess_the_Cost<501]
+summary(DT_sub500)
+summary(DT[Guess_the_Cost>500])
+lm.basic<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page,DT_sub500)
+summary(lm.basic)
+```
+```{r}
+DT_sub500_income<-DT_sub500[Household_Income < 7]
+lm.cv<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT_sub500_income)
+summary(lm.cv)
+```
+
