@@ -5,24 +5,46 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+d = read.xlsx('Final_241_Data_Shared.xlsx')
+#d = d[d$Guess_the_Cost <= 2000,]
+# load packages 
+library(data.table)
+library(dplyr)
+library(tidyr)
+library(foreign)
+library(lmtest)
+library(sandwich)
+library(multiwayvcov)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+#Clean data
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+#2. General summaries
+```{r}
+summary(d)
+summary(d$Guess_the_Cost[d$ == 1]) #French language only
+summary(d$Guess_the_Cost[d$German_Purchasing_Page == 1]) #German language only
+summary(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0]) #English language only
 
-```{r pressure, echo=FALSE}
-plot(pressure)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+##Summary/Initial Plots
+```{r}
+par(mfrow=c(2,2))
+hist(d$Guess_the_Cost[d$French_Purchasing_Page == 1 & d$Guess_the_Cost<1500],main = "French format, max 1500", xlab= "Guessed cost", breaks=50)
+hist(d$Guess_the_Cost[d$German_Purchasing_Page == 1 & d$Guess_the_Cost<1500],main = "German format, max 1500",xlab= "Guessed cost", breaks=50)
+hist(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0 & d$Guess_the_Cost<1500],xlab= "Guessed cost",main = "English format, max 1500",breaks=50)
+hist(d$Guess_the_Cost[d$Guess_the_Cost<1500],main="All formats, max 1500",breaks=100,xlab= "Guessed cost",)
+```
+
+```{r}
+par(mfrow=c(2,2))
+hist(d$Guess_the_Cost[d$French_Purchasing_Page == 1 & d$Guess_the_Cost<200],main = "French format, max 200",xlab= "Guessed cost", breaks=50)
+hist(d$Guess_the_Cost[d$German_Purchasing_Page == 1 & d$Guess_the_Cost<200],main = "German format, max 200",xlab= "Guessed cost", breaks=50)
+hist(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0 & d$Guess_the_Cost<200],xlab= "Guessed cost",main = "English format, max 200",breaks=50)
+hist(d$Guess_the_Cost[d$Guess_the_Cost<200],main="All formats, max 200",xlab= "Guessed cost",breaks=100)
+abline(v = median(d$Guess_the_Cost[d$Guess_the_Cost<200]), col = "blue")
+```

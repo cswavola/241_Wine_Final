@@ -5,14 +5,25 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath("./"))
 ```
 
 
-```{r}
-d = read.csv('Final_241_Data_Shared.csv')
+```{r, echo=FALSE}
+d = read.xlsx('Final_241_Data_Shared.xlsx')
 #d = d[d$Guess_the_Cost <= 2000,]
+# load packages 
+library(data.table)
+library(dplyr)
+library(tidyr)
+library(foreign)
+library(lmtest)
+library(sandwich)
+library(multiwayvcov)
 ```
 
+
+#1. Functions to use
 ```{r}
 standard_conf_int_95 = function(regression, n){
   r = coeftest(regression, vcovHC(regression))
@@ -21,13 +32,32 @@ standard_conf_int_95 = function(regression, n){
   return (c(lower_bound,upper_bound))
 }
 ```
-
+#2. General summaries
 ```{r}
 summary(d$Guess_the_Cost[d$French_Purchasing_Page == 1]) #French language only
 summary(d$Guess_the_Cost[d$German_Purchasing_Page == 1]) #German language only
 summary(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0]) #English language only
 
 ```
+
+##Summary/Initial Plots
+```{r}
+par(mfrow=c(2,2))
+hist(d$Guess_the_Cost[d$French_Purchasing_Page == 1 & d$Guess_the_Cost<1500],main = "French format, max 1500", xlab= "Guessed cost", breaks=50)
+hist(d$Guess_the_Cost[d$German_Purchasing_Page == 1 & d$Guess_the_Cost<1500],main = "German format, max 1500",xlab= "Guessed cost", breaks=50)
+hist(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0 & d$Guess_the_Cost<1500],xlab= "Guessed cost",main = "English format, max 1500",breaks=50)
+hist(d$Guess_the_Cost[d$Guess_the_Cost<1500],main="All formats, max 1500",breaks=100,xlab= "Guessed cost",)
+```
+
+```{r}
+par(mfrow=c(2,2))
+hist(d$Guess_the_Cost[d$French_Purchasing_Page == 1 & d$Guess_the_Cost<200],main = "French format, max 200",xlab= "Guessed cost", breaks=50)
+hist(d$Guess_the_Cost[d$German_Purchasing_Page == 1 & d$Guess_the_Cost<200],main = "German format, max 200",xlab= "Guessed cost", breaks=50)
+hist(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0 & d$Guess_the_Cost<200],xlab= "Guessed cost",main = "English format, max 200",breaks=50)
+hist(d$Guess_the_Cost[d$Guess_the_Cost<200],main="All formats, max 200",xlab= "Guessed cost",breaks=100)
+abline(v = median(d$Guess_the_Cost[d$Guess_the_Cost<200]), col = "blue")
+```
+
 
 ```{r}
 #with outliers
@@ -43,11 +73,6 @@ sd(d$Guess_the_Cost[d$German_Purchasing_Page == 1])
 sd(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page ==0])
 ```
 
-```{r}
-hist(d$Guess_the_Cost[d$French_Purchasing_Page == 1])
-hist(d$Guess_the_Cost[d$German_Purchasing_Page == 1])
-hist(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0])
-```
 
 
 
@@ -119,3 +144,9 @@ coeftest(r, vcovHC(r))
 r = lm(Purchase_20 ~French_Purchasing_Page + German_Purchasing_Page, data = d)
 coeftest(r, vcovHC(r))
 ```
+
+
+```{r}
+
+```
+

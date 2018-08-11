@@ -11,6 +11,8 @@ d = read.xlsx('Final_241_Data_Shared.xlsx')
 
 ```{r}
 DT<-data.table(d)
+
+#Use rory's clean data here instead
 DT_sub500<-DT[Guess_the_Cost<501]
 summary(DT_sub500)
 summary(DT[Guess_the_Cost>500])
@@ -21,5 +23,11 @@ summary(lm.basic)
 DT_sub500_income<-DT_sub500[Household_Income < 7]
 lm.cv<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT_sub500_income)
 summary(lm.cv)
+```
+#Saturated model
+```{r}
+DT_sub500$Track<-factor(DT_sub500$Track)
+lm.saturated<-lm(Guess_the_Cost~ Track + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT_sub500_income)
+summary(lm.saturated)
 ```
 
