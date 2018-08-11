@@ -1,0 +1,270 @@
+---
+title: "Final Proj"
+author: "Sharad Varadarajan"
+date: "July 22, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+library(pwr)
+library(pwr2)
+library(effsize)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+df = data.frame(matrix(0, ncol = 1, nrow = 599))
+colnames(df) = c("Sample_Size")
+df$Sample_Size = seq(6, 1800, 3)
+df$Power = seq(6, 1800, 3)
+for(i in seq(1,length(df$Sample_Size))){
+  df$Power[i] = pwr.anova.test(k=3,f=0.022,sig.level=.05, n = df$Sample_Size[i]/3)['power']
+}
+
+plot(df$Sample_Size, df$Power, title("Power vs Sample Size"), xlab = 'Total Samples', ylab = 'Power')
+
+abline(v = 1200, col=c('red'))
+abline(h = df$Power[df$Sample_Size == 1200], col=c('red') )
+df$Power[df$Sample_Size == 1200]
+```
+
+```{r}
+pwr.anova.test(k=3,power=0.8,sig.level=.05, f = 0.022)
+```
+
+```{r}
+pwr.1way(k=3, n=400, f=0.1, alpha=0.05)
+pwr.1way(k=6, n=200, f=0.1, alpha=0.05)
+pwr.1way(k=12, n=100, f=0.1, alpha=0.05)
+```
+
+```{r}
+pwr.1way(k=3, n=400, f=0.1, alpha=0.05)
+pwr.1way(k=3, n=200, f=0.1, alpha=0.05)
+pwr.1way(k=3, n=100, f=0.1, alpha=0.05)
+```
+
+
+```{r}
+#Guess the Price - Language effect
+d = read.csv('pilot.csv')
+#d = d[d$Guess_Price != 1800.00,]
+
+var(d$Guess_Price[d$Language == 'English'])
+var(d$Guess_Price[d$Language == 'French'])
+var(d$Guess_Price[d$Language == 'German'])
+
+mean(d$Guess_Price[d$Language == 'English'])
+mean(d$Guess_Price[d$Language == 'French'])
+mean(d$Guess_Price[d$Language == 'German'])
+
+(n_E = length(d$Guess_Price[d$Language == 'English']))
+(n_F = length(d$Guess_Price[d$Language == 'French']))
+(n_G = length(d$Guess_Price[d$Language == 'German']))
+
+
+```
+https://webpower.psychstat.org/models/means03/effectsize.php
+
+With outlier – effect size = 0.1598 for Guess The Price
+Without outlier – effect size = 0.08 for Guess The Price
+
+```{r}
+#Purchase at $50 - Language effect
+
+p_E = length(d$P_50[d$Language == 'English' & d$P_50 == 'Yes'])/100
+p_F = length(d$P_50[d$Language == 'French' & d$P_50 == 'Yes'])/100
+p_G = length(d$P_50[d$Language == 'German' & d$P_50 == 'Yes'])/100
+
+(m_E = n_E* p_E)
+(m_F = n_F* p_F)
+
+(m_G = n_G* p_G)
+
+
+
+(v_E = n_E* p_E*(1-p_E))
+(v_F = n_F* p_F*(1-p_F))
+
+(v_G = n_G* p_G*(1-p_G))
+
+```
+https://webpower.psychstat.org/models/means03/effectsize.php
+
+With outlier - effect size = 0.69 for Guess The Price
+Without outlier - effect size = 0.71 for Guess The Price
+
+```{r}
+#Purchase at $35 - Language effect
+
+p_E = length(d$P_35[d$Language == 'English' & d$P_35 == 'Yes'])/100
+p_F = length(d$P_35[d$Language == 'French' & d$P_35 == 'Yes'])/100
+p_G = length(d$P_35[d$Language == 'German' & d$P_35 == 'Yes'])/100
+
+(m_E = n_E* p_E)
+(m_F = n_F* p_F)
+
+(m_G = n_G* p_G)
+
+
+
+(v_E = n_E* p_E*(1-p_E))
+(v_F = n_F* p_F*(1-p_F))
+
+(v_G = n_G* p_G*(1-p_G))
+```
+With outlier - effect size = 0.85 for Guess The Price
+Without outlier - effect size = 0.89 for Guess The Price
+
+```{r}
+#Purchase at $20 - Language effect
+
+p_E = length(d$P_20[d$Language == 'English' & d$P_20 == 'Yes'])/100
+p_F = length(d$P_20[d$Language == 'French' & d$P_20 == 'Yes'])/100
+p_G = length(d$P_20[d$Language == 'German' & d$P_20 == 'Yes'])/100
+
+(m_E = n_E* p_E)
+(m_F = n_F* p_F)
+
+(m_G = n_G* p_G)
+
+
+
+(v_E = n_E* p_E*(1-p_E))
+(v_F = n_F* p_F*(1-p_F))
+
+(v_G = n_G* p_G*(1-p_G))
+```
+
+
+
+
+With outlier - effect size = 0.54 for Guess The Price
+Without outlier - effect size = 0.60 for Guess The Price
+
+
+```{r}
+d = read.csv('Final_241_Data_Shared.csv')
+#d = d[d$Guess_the_Cost <= 2000,]
+```
+
+```{r}
+standard_conf_int_95 = function(regression, n){
+  r = coeftest(regression, vcovHC(regression))
+  upper_bound = r[n,1] + 1.96* r[n, 2] 
+  lower_bound = r[n,1] -1.96* r[n, 2]
+  return (c(lower_bound,upper_bound))
+}
+```
+
+```{r}
+summary(d$Guess_the_Cost[d$French_Purchasing_Page == 1]) #French language only
+summary(d$Guess_the_Cost[d$German_Purchasing_Page == 1]) #German language only
+summary(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0]) #English language only
+
+```
+
+```{r}
+#with outliers
+r = lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page, data = d)
+
+coeftest(r, vcovHC(r))
+
+(French_95 = standard_conf_int_95(r,'French_Purchasing_Page'))
+(German_95 = standard_conf_int_95(r,'German_Purchasing_Page'))
+
+sd(d$Guess_the_Cost[d$French_Purchasing_Page == 1])
+sd(d$Guess_the_Cost[d$German_Purchasing_Page == 1])
+sd(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page ==0])
+```
+
+```{r}
+hist(d$Guess_the_Cost[d$French_Purchasing_Page == 1])
+hist(d$Guess_the_Cost[d$German_Purchasing_Page == 1])
+hist(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0])
+```
+
+
+
+
+```{r}
+(French_effect = cohen.d(Guess_the_Cost~French_Purchasing_Page, data = d[d$German_Purchasing_Page != 1,]))
+
+(German_effect = cohen.d(Guess_the_Cost~German_Purchasing_Page, data = d[d$French_Purchasing_Page != 1,]))
+```
+**Effect size is very small for both French and German effect**
+
+```{r}
+pwr.t2n.test(n1 = NROW(d[d$German_Purchasing_Page != 1 & d$French_Purchasing_Page != 1,]), n2 = NROW(d[d$French_Purchasing_Page == 1,]), d = .045, sig.level = .05)
+
+pwr.t2n.test(n1 = NROW(d[d$German_Purchasing_Page != 1 & d$French_Purchasing_Page != 1,]), n2 = NROW(d[d$German_Purchasing_Page == 1,]), d = 0.037, sig.level = .05)
+
+
+```
+
+**Due to the high variance in our Guess the Price outcome, our power for detecting an effect between French and English language was 9.8%, and our power for detecting an effect between German and English language was 8.22%.**
+
+**Gpower says effect size f is 0.022**
+
+```{r}
+pwr.1way(k=3, n=400, f=0.1, alpha=0.05) #Aiming for effect size of 0.1 - Power of 88%
+
+pwr.1way(k=3, n=400, f=0.022, alpha=0.05) #Got effect size of 0.022 - Power of 9.6%
+```
+
+```{r}
+r = lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page*US_Origin, data = d)
+
+coeftest(r, vcovHC(r))
+```
+
+```{r}
+r = lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * Long_Description + German_Purchasing_Page*Long_Description, data = d)
+
+coeftest(r, vcovHC(r))
+```
+```{r}
+French_cb = lm(French_Purchasing_Page ~ Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, data = d[d$German_Purchasing_Page != 1,])
+
+summary(French_cb)
+
+German_cb = lm(German_Purchasing_Page ~ Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, data = d[d$French_Purchasing_Page != 1,])
+
+summary(German_cb)
+
+French_German_cb = lm(French_Purchasing_Page ~ Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, data = d[d$French_Purchasing_Page == 1 | d$German_Purchasing_Page == 1 ,])
+
+summary(French_German_cb)
+```
+
+**p-values greater than .05 for all 3 regressions --> Covariate balance check shows that we cannot reject the null hypothesis that our covariates have no predictive power over our treatment variable**
+
+```{r}
+r = lm(Purchase_50 ~French_Purchasing_Page + German_Purchasing_Page, data = d)
+coeftest(r, vcovHC(r))
+
+```
+
+```{r}
+r = lm(Purchase_35 ~French_Purchasing_Page + German_Purchasing_Page, data = d)
+coeftest(r, vcovHC(r))
+```
+
+```{r}
+r = lm(Purchase_20 ~French_Purchasing_Page + German_Purchasing_Page, data = d)
+coeftest(r, vcovHC(r))
+```
+
