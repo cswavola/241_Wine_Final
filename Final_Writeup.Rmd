@@ -2,9 +2,13 @@
 title: "Final_Description_analysis"
 output: html_document
 ---
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath("./"))
+```
+
+
+```{r, echo=FALSE}
 d = read.xlsx('Final_241_Data_Shared.xlsx')
 #d = d[d$Guess_the_Cost <= 2000,]
 # load packages 
@@ -17,34 +21,115 @@ library(sandwich)
 library(multiwayvcov)
 ```
 
-```{r}
-#Clean data
+
+```{r, include=FALSE}
+#Functions for later use
+standard_conf_int_95 = function(regression, n){
+  r = coeftest(regression, vcovHC(regression))
+  upper_bound = r[n,1] + 1.96* r[n, 2] 
+  lower_bound = r[n,1] -1.96* r[n, 2]
+  return (c(lower_bound,upper_bound))
+}
 ```
 
-
-#2. General summaries
+#1. EDA and Cleaning
+##Pre-cleaning
 ```{r}
-summary(d)
-summary(d$Guess_the_Cost[d$ == 1]) #French language only
+#look at randomization/tracks 
+barplot(prop.table(table(d$Track)),main="Distribution across Tracks, Normalized",names.arg = c(0:12))
+#Important to note- 0 on barchart is N/A or attrition.
+#demographic summary
+demographics=data.table(d[,.(English_as_primary,Male,Household_Income,Other_Language_Spoken,Drink_Frequency,Cab_Preference,Purchase_Frequency)])
+
+
+for (i in (1:length(names(demographics)))){
+  #print(summary(demographics[,..i]))
+  barplot(prop.table(table(demographics[,..i])),
+           main=names(demographics)[i])}
+```
+
+```{r}
+#colnames(d)
+summary(d$Guess_the_Cost)
+hist(d$Guess_the_Cost,breaks=100)
+summary(d$Guess_the_Cost[d$French_Purchasing_Page == 1]) #French language only
 summary(d$Guess_the_Cost[d$German_Purchasing_Page == 1]) #German language only
 summary(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0]) #English language only
 
 ```
 
+##deduping/cleaning
+```{r deduping}
+library(data.table)
+# Cleaning out incomplete responses before treament exposures
+d <- d[!is.na(d$Track),]
+#summary(d)
+# Counting occurances of IP address and Geo-codes
+d$geo_code <- paste(d$LocationLatitude, d$LocationLongitude)
+dt = data.table(d)
+dt[, `freq_geo` := .N, by = geo_code]
+dt[, `freq_ip` := .N, by = IPAddress]
+#class(as.data.frame(dt))
+#dt
+## Creatig 2 dedupped dataset, one with complete dedup where we do not allow any duplicates in IP or Geo code, and one where we exclude IP dupes, but allow up to 5 dups per geo code
+complete_dedup<- dt[dt$freq_ip==1 & dt$freq_geo==1]
+#nrow(complete_dedup)
+five_or_less_dedup <- dt[dt$freq_ip==1 & dt$freq_geo<=5]
+#nrow(five_or_less_dedup)
+d<-five_or_less_dedup
+```
+
 ##Summary/Initial Plots
+###All guesses, including high outliers
 ```{r}
-par(mfrow=c(2,2))
-hist(d$Guess_the_Cost[d$French_Purchasing_Page == 1 & d$Guess_the_Cost<1500],main = "French format, max 1500", xlab= "Guessed cost", breaks=50)
-hist(d$Guess_the_Cost[d$German_Purchasing_Page == 1 & d$Guess_the_Cost<1500],main = "German format, max 1500",xlab= "Guessed cost", breaks=50)
-hist(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0 & d$Guess_the_Cost<1500],xlab= "Guessed cost",main = "English format, max 1500",breaks=50)
-hist(d$Guess_the_Cost[d$Guess_the_Cost<1500],main="All formats, max 1500",breaks=100,xlab= "Guessed cost",)
+hist(d$Guess_the_Cost[d$Guess_the_Cost<1500],main="All Guesses",breaks=100,xlab= "Guessed cost")
 ```
 
 ```{r}
+#hist, includes all cleaned 
+hist(d$Guess_the_Cost,main="All conditions",xlab= "Guessed cost", xlim = c(0,100),breaks=1000)
+abline(v = mean(d$Guess_the_Cost), col = "blue")
+abline(v = median(d$Guess_the_Cost), col = "green")
+
+#formats
+par(mfrow=c(1,3),pin=c(2,2))
+
+hist(d$Guess_the_Cost[d$French_Purchasing_Page == 1],main = "French format",xlab= "Guessed cost", xlim = c(0,100),breaks=1000)
+abline(v = mean(d$Guess_the_Cost[d$French_Purchasing_Page == 1]), col = "blue")
+abline(v = median(d$Guess_the_Cost[d$French_Purchasing_Page == 1]), col = "green")
+
+hist(d$Guess_the_Cost[d$German_Purchasing_Page == 1],main = "German format",xlab= "Guessed cost", xlim = c(0,100),breaks=1000)
+abline(v = mean(d$Guess_the_Cost[d$German_Purchasing_Page == 1]), col = "blue")
+abline(v = median(d$Guess_the_Cost[d$German_Purchasing_Page == 1]), col = "green")
+
+hist(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0 ],main = "English format", xlab= "Guessed cost", xlim = c(0,100),breaks=1000)
+abline(v = median(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0]), col = "green")
+abline(v = mean(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0]), col = "blue")
+
+```
+```{r}
+#hist figures for origin, description, cleaned 
 par(mfrow=c(2,2))
-hist(d$Guess_the_Cost[d$French_Purchasing_Page == 1 & d$Guess_the_Cost<200],main = "French format, max 200",xlab= "Guessed cost", breaks=50)
-hist(d$Guess_the_Cost[d$German_Purchasing_Page == 1 & d$Guess_the_Cost<200],main = "German format, max 200",xlab= "Guessed cost", breaks=50)
-hist(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0 & d$Guess_the_Cost<200],xlab= "Guessed cost",main = "English format, max 200",breaks=50)
-hist(d$Guess_the_Cost[d$Guess_the_Cost<200],main="All formats, max 200",xlab= "Guessed cost",breaks=100)
-abline(v = median(d$Guess_the_Cost[d$Guess_the_Cost<200]), col = "blue")
+
+#Origins
+d_chart=d$Guess_the_Cost[d$US_Origin == 1]
+hist(d_chart,main = "US Origin Wine",xlab= "Guessed cost", xlim = c(0,100),breaks=1000)
+abline(v = mean(d_chart), col = "blue")
+abline(v = median(d_chart), col = "green")
+
+d_chart=d$Guess_the_Cost[d$US_Origin == 0]
+hist(d_chart,main = "French Origin Wine",xlab= "Guessed cost", xlim = c(0,100),breaks=1000)
+abline(v = mean(d_chart), col = "blue")
+abline(v = median(d_chart), col = "green")
+
+#descriptions
+d_chart=d$Guess_the_Cost[d$Long_Description == 0]
+hist(d_chart,main = "Short Description",xlab= "Guessed cost", xlim = c(0,100),breaks=1000)
+abline(v = mean(d_chart), col = "blue")
+abline(v = median(d_chart), col = "green")
+
+d_chart=d$Guess_the_Cost[d$Long_Description == 1]
+hist(d_chart,main = "Long Description",xlab= "Guessed cost", xlim = c(0,100),breaks=1000)
+abline(v = mean(d_chart), col = "blue")
+abline(v = median(d_chart), col = "green")
 ```

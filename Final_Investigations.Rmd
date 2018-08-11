@@ -6,27 +6,70 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = normalizePath("./"))
-d = read.xlsx('Final_241_Data_Shared.xlsx')
+d = read.csv('1st_Launch_Full.csv')
+```
+#2. Pre-clean General summaries
+```{r}
+summary(d$Guess_the_Cost[d$French_Purchasing_Page == 1]) #French language only
+summary(d$Guess_the_Cost[d$German_Purchasing_Page == 1]) #German language only
+summary(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0]) #English language only
+
+```
+## De-dupping & cleaning
+```{r deduping}
+library(data.table)
+# Cleaning out incomplete responses before treament exposures
+d <- d[!is.na(d$Track),]
+#summary(d)
+# Counting occurances of IP address and Geo-codes
+d$geo_code <- paste(d$LocationLatitude, d$LocationLongitude)
+dt = data.table(d)
+dt[, `freq_geo` := .N, by = geo_code]
+dt[, `freq_ip` := .N, by = IPAddress]
+#class(as.data.frame(dt))
+#dt
+## Creatig 2 dedupped dataset, one with complete dedup where we do not allow any duplicates in IP or Geo code, and one where we exclude IP dupes, but allow up to 5 dups per geo code
+complete_dedup<- dt[dt$freq_ip==1 & dt$freq_geo==1]
+#nrow(complete_dedup)
+five_or_less_dedup <- dt[dt$freq_ip==1 & dt$freq_geo<=5]
+#nrow(five_or_less_dedup)
+```
+#post cleaning summaries
+```{r}
+summary(five_or_less_dedup$Guess_the_Cost[d$French_Purchasing_Page == 1]) #French language only
+summary(five_or_less_dedup$Guess_the_Cost[d$German_Purchasing_Page == 1]) #German language only
+summary(five_or_less_dedup$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0]) #English language only
+
+```
+## Checking attrition 
+## After dedputing, we take a look at our attrition by track, and noticing that we have zero attrition for all tracks
+```{r checking attrition}
+library(dplyr)
+five_or_less_dedup %>%
+  group_by(Finished, Track) %>%
+  summarise(count= n())
 ```
 
+#Data investigations
 ```{r}
-DT<-data.table(d)
+DT<-data.table(five_or_less_dedup)
 
 #Use rory's clean data here instead
-DT_sub500<-DT[Guess_the_Cost<501]
-summary(DT_sub500)
-summary(DT[Guess_the_Cost>500])
-lm.basic<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page,DT_sub500)
+lm.basic<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page,DT)
 summary(lm.basic)
 ```
+
+
 ```{r}
-DT_sub500_income<-DT_sub500[Household_Income < 7]
-lm.cv<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT_sub500_income)
+#factor covariate "income" for "prefer not to answer"
+DT$Household_Income<-factor(DT$Household_Income)
+#basic covariate model, treatment is format
+lm.cv<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT)
 summary(lm.cv)
 ```
 #Saturated model
 ```{r}
-DT_sub500$Track<-factor(DT_sub500$Track)
+DT$Track<-factor(DT$Track)
 lm.saturated<-lm(Guess_the_Cost~ Track + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT_sub500_income)
 summary(lm.saturated)
 ```
