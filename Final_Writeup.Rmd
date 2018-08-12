@@ -35,15 +35,17 @@ For wine's country of origin, we included US and France. Here we are particularl
 
 For flavor profile description, we have two versions - long and short. We believe that this could be a proxy for foreign language "dosage". A long flavor profile in French might be more noticeable than a short French tagline, and may amplify the effect that we find.
 
-To summarize, we have a 3*2*2 design, which results in 12 groups of participants. (See summary in picture below).
+To summarize, we have a 3 x 2 x 2 design, which results in 12 groups of participants. (See summary in figure 1).
 
 ![Groups Design](Group_Design.png)
+
 
 Because of our time and resource constraint, we could not conduct a real-life experiement with actual wines in actual stores. Instead, we decided to conduct the study through a Qualtrics survey and gather responses through Mechanical Turk. The survey is structured into the following sections:
 
 ![Survey Flow](survey_flow.png)
 
-We start with some demographics question about participants primary language, income and gender. These wil serve as covariates in our later model. Then, we ask participants about their wine-related behavior, including how often they drink wine, whether they like Cabernet Sauvignon, and how often they purchase bottles of wine. We think that these wine-related behavior will explain some of the variation in willingness-to-pay, and therefore will be good covariates that help us reduce our standard error. The third section is the main part of our experiement where we introduce the treament. Here, we randomly assign the participants into one of twelve groups mentioned above, and show them a simulated purchasing page (example below).
+
+We start with some demographics question about participants primary language, income and gender. These wil serve as covariates in our later model. Then, we ask participants about their wine-related behavior, including how often they drink wine, whether they like Cabernet Sauvignon, and how often they purchase bottles of wine. We think that these wine-related behavior will explain some of the variation in willingness-to-pay, and therefore will be good covariates that help us reduce our standard error. The third section is the main part of our experiement where we introduce the treament. Here, we randomly assign the participants into one of twelve groups mentioned above, and show them a simulated purchasing page (example seen in figure 3).
 
 ![Page Sample](Sample_wine_page.png)
 
