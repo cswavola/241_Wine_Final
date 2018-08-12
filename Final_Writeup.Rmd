@@ -1,5 +1,6 @@
 ---
-title: "Final_Description_analysis"
+title: "W241 Final Report"
+author: Rory Liu, Charlotte Swavola, Sharad Varadarajan
 output: html_document
 ---
 ```{r setup, include=FALSE}
@@ -19,6 +20,7 @@ library(foreign)
 library(lmtest)
 library(sandwich)
 library(multiwayvcov)
+library(stargazer)
 ```
 
 
