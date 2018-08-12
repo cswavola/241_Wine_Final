@@ -8,6 +8,7 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = normalizePath("./"))
 d = read.csv('1st_Launch_Full.csv')
 library(MASS)
+library(stargazer)
 ```
 #2. Pre-clean General summaries- already in writeup
 ```{r}
@@ -64,7 +65,6 @@ summary(lm.basic)
 ```{r}
 DT<-data.table(d)
 lm.basic<-lm(Guess_the_Cost~US_Origin,DT)
-summary(lm.basic)
 ```
 ###Maybe try RLM here- need to be able to explain it
 
@@ -72,14 +72,14 @@ summary(lm.basic)
 ```{r}
 #Change GG questions to "Max purchase" integer column
 d<-five_or_less_dedup
-d$max_purchase<-rep(0,length(d$Purchase_50))
+d$max_purchase<-rep(19,length(d$Purchase_50))
 DT<-data.table(d)
-DT[Purchase_20==1,max_purchase:=20]
-DT[Purchase_35==1,max_purchase:=35]
+DT[Purchase_20==1,max_purchase:=34]
+DT[Purchase_35==1,max_purchase:=49]
 DT[Purchase_50==1,max_purchase:=50]
 summary(DT$max_purchase)
-barplot()
-hist(DT$max_purchase,main = "Max price willing to pay",breaks=c(0,20,35,50))
+hist(DT$max_purchase,main = "Max price willing to pay",breaks=c(0,19,34,49,55),xlab = "Purchase Price")
+
 ```
 
 
@@ -109,18 +109,32 @@ d$Cab_Preference<-d[,.(abs(d$Cab_Preference-2))]
 #Purchase Frequency- also not linear
 d$Purchase_Frequency<-factor(d$Purchase_Frequency)
 ```
+
 ```{r}
 #basic covariate model, treatment is format
-lm.cv<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT)
-summary(lm.cv)
+lm.cv<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency + Speaks_French + Speaks_German,d)
+stargazer(lm.basic,lm.cv, title= "Basic Regressions")
 ```
-#Saturated model
+##Saturated model
 ```{r}
 DT$Track<-factor(DT$Track)
 lm.saturated<-lm(Guess_the_Cost~ Track + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT)
 summary(lm.saturated)
 ```
 
+
+
+
+
+##Interactions
+```{r}
+#same origin/format binary
+d$same_format_origin<-rep(0,length(d$French_Purchasing_Page))
+d[French_Purchasing_Page==1 & US_Origin==0,same_format_origin :=1]
+d[German_Purchasing_Page==0 & French_Purchasing_Page==0 & US_Origin==1,same_format_origin :=1]
+d$
+lm.same<-lm(Guess_the_Cost ~  ,d)
+```
 
 
 
