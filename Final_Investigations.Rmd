@@ -9,6 +9,8 @@ knitr::opts_knit$set(root.dir = normalizePath("./"))
 d = read.csv('1st_Launch_Full.csv')
 library(MASS)
 ```
+
+
 #2. Pre-clean General summaries- already in writeup
 ```{r}
 summary(d$Guess_the_Cost[d$French_Purchasing_Page == 1]) #French language only
@@ -78,7 +80,7 @@ DT[Purchase_20==1,max_purchase:=20]
 DT[Purchase_35==1,max_purchase:=35]
 DT[Purchase_50==1,max_purchase:=50]
 summary(DT$max_purchase)
-barplot()
+#barplot()
 hist(DT$max_purchase,main = "Max price willing to pay",breaks=c(0,20,35,50))
 ```
 
@@ -109,6 +111,7 @@ d$Cab_Preference<-d[,.(abs(d$Cab_Preference-2))]
 #Purchase Frequency- also not linear
 d$Purchase_Frequency<-factor(d$Purchase_Frequency)
 ```
+
 ```{r}
 #basic covariate model, treatment is format
 lm.cv<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT)
