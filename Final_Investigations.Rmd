@@ -1,10 +1,15 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
 <<<<<<< HEAD
 ---
 title: "Final_investigations"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = normalizePath("./"))
 d = read.csv('1st_Launch_Full.csv')
@@ -19,7 +24,7 @@ summary(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Pag
 
 ```
 ## De-dupping & cleaning
-```{r deduping}
+```{r}
 library(data.table)
 # Cleaning out incomplete responses before treament exposures
 d <- d[!is.na(d$Track),]
@@ -40,14 +45,12 @@ d<-five_or_less_dedup
 ```
 #post cleaning summaries
 ```{r}
-summary(five_or_less_dedup$Guess_the_Cost[d$French_Purchasing_Page == 1]) #French language only
-summary(five_or_less_dedup$Guess_the_Cost[d$German_Purchasing_Page == 1]) #German language only
-summary(five_or_less_dedup$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0]) #English language only
+#stargazer(d$Guess_the_Cost[d$French_Purchasing_Page == 1],d$Guess_the_Cost[d$German_Purchasing_Page == 1],d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0],summary=TRUE) #English language only
 
 ```
 ## Checking attrition 
 ## After dedputing, we take a look at our attrition by track, and noticing that we have zero attrition for all tracks
-```{r checking attrition}
+```{r}
 library(dplyr)
 five_or_less_dedup %>%
   group_by(Finished, Track) %>%
@@ -72,7 +75,6 @@ lm.basic<-lm(Guess_the_Cost~US_Origin,DT)
 #Ok, let's try the other output variables
 ```{r}
 #Change GG questions to "Max purchase" integer column
-d<-five_or_less_dedup
 d$max_purchase<-rep(19,length(d$Purchase_50))
 DT<-data.table(d)
 DT[Purchase_20==1,max_purchase:=34]
@@ -98,8 +100,8 @@ d$Male<-as.factor(d$Male)
 #household income- as factor due to <20k, >100k, and do not answer
 d$Household_Income<-as.factor(d$Household_Income)
 #Other languages- Blank is only English, French 1, German 2, Other 3
-d$Speaks_German<-as.numeric(d[,Other_Language_Spoken %like% "2"])
-d$Speaks_French<-as.numeric(d[,Other_Language_Spoken %like% "1"])
+#d$Speaks_German<-as.numeric(d[,Other_Language_Spoken %like% "2"])
+#d$Speaks_French<-as.numeric(d[,Other_Language_Spoken %like% "1"])
 
 #Drink Frequency- options are not linear 
 d$Drink_Frequency<-factor(d$Drink_Frequency)
@@ -113,13 +115,23 @@ d$Purchase_Frequency<-factor(d$Purchase_Frequency)
 
 ```{r}
 #basic covariate model, treatment is format
-lm.cv<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency + Speaks_French + Speaks_German,d)
-stargazer(lm.basic,lm.cv, title= "Basic Regressions")
+lm.cv_format<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency ,d)
+#stargazer(lm.basic,lm.cv, title= "Basic Regressions",type="latex")
+
+#covariates, treatment origin
+lm.cv_origin<-lm(Guess_the_Cost~US_Origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency ,d)
+#summary(lm.cv_origin)
+
+#covariates, treatment description
+lm.cv_description<-lm(Guess_the_Cost~Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency ,d)
+#summary(lm.cv_description)
+
+stargazer(lm.basic,lm.cv_format,lm.cv_origin,lm.cv_description, title= "Basic Regressions",type="text", align=TRUE)
 ```
 ##Saturated model
 ```{r}
-DT$Track<-factor(DT$Track)
-lm.saturated<-lm(Guess_the_Cost~ Track + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT)
+d$Track<-factor(d$Track)
+lm.saturated<-lm(Guess_the_Cost~ Track + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
 summary(lm.saturated)
 ```
 
@@ -130,11 +142,22 @@ summary(lm.saturated)
 ##Interactions
 ```{r}
 #same origin/format binary
+d<-data.table(d)
 d$same_format_origin<-rep(0,length(d$French_Purchasing_Page))
 d[French_Purchasing_Page==1 & US_Origin==0,same_format_origin :=1]
 d[German_Purchasing_Page==0 & French_Purchasing_Page==0 & US_Origin==1,same_format_origin :=1]
-d$
-lm.same<-lm(Guess_the_Cost ~  ,d)
+#French layout+french wine
+d$French_format_wine<-rep(0,length(d$French_Purchasing_Page))
+d[French_Purchasing_Page==1 & US_Origin==0,"French_format_wine" :=1]
+#English layout + US wine
+d$English_format_wine<-rep(0,length(d$French_Purchasing_Page))
+d[German_Purchasing_Page==0 & French_Purchasing_Page==0 & US_Origin==1,"English_format_wine" :=1]
+
+#models
+lm.same<-lm(Guess_the_Cost ~  same_format_origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency ,d)
+#summary(lm.same)
+lm.same_indiv<-lm(d$Guess_the_Cost ~ French_format_wine + English_format_wine + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
+stargazer(lm.same,lm.same_indiv,align=TRUE,type="text")
 ```
 
 
@@ -324,7 +347,7 @@ DT<-data.table(d)
 DT[Purchase_20==1,max_purchase:=20]
 DT[Purchase_35==1,max_purchase:=35]
 DT[Purchase_50==1,max_purchase:=50]
-summary(DT$max_purchase)
+#summary(DT$max_purchase)
 #barplot()
 hist(DT$max_purchase,main = "Max price willing to pay",breaks=c(0,20,35,50))
 ```
@@ -346,7 +369,7 @@ d$Household_Income<-as.factor(d$Household_Income)
 #Other languages- Blank is only English, French 1, German 2, Other 3
 d$Speaks_German<-as.numeric(d[,Other_Language_Spoken %like% "2"])
 d$Speaks_French<-as.numeric(d[,Other_Language_Spoken %like% "1"])
-
+length(d$Speaks_French)
 #Drink Frequency- options are not linear 
 d$Drink_Frequency<-factor(d$Drink_Frequency)
 
@@ -359,8 +382,8 @@ d$Purchase_Frequency<-factor(d$Purchase_Frequency)
 
 ```{r}
 #basic covariate model, treatment is format
-lm.cv<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT)
-summary(lm.cv)
+lm.cv<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary  + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT)
+stargazer(lm.basic,lm.cv)
 ```
 #Saturated model
 ```{r}
@@ -375,12 +398,12 @@ summary(lm.saturated)
 #RI with limit on guesses
 ```{r}
 DT<-data.table(d)
-#for RI, only using the bottom 95%
+#for RI, only using the bottom 95percent
 boxplot(DT$Guess_the_Cost,horizontal = TRUE)
 title("Boxplot for Guesses including upper outliers")
 DT_95<-DT[Guess_the_Cost < quantile(DT$Guess_the_Cost,.95)]
 boxplot(DT_95$Guess_the_Cost,horizontal = TRUE)
-title("Boxplot for Guesses, bottom 95%")
+title("Boxplot for Guesses, bottom 95 percent")
 ```
 
 
