@@ -27,9 +27,37 @@ While scholars seem to agree that foreign language advertising shapes product pe
 In our study, we seek to understand the relationship between foreign language advertising and consumer willingness to pay. To narrow down our scope for a manageable experiement given our time and resource constaints, we decided to focus on one particular product: wine. The high variance of wine prices, and the strong association between place of origin and the signal on quality makes it a great subject for our study.
 
 ## Experimental Design
+To fully understand the relationship between foreign language advertising and will purchases, we drafted a multi-factorial design for our experiement. There are three main factors that we want to investigate: advertising language, wine's country of origin, and length of flavor profile description.
+
+For advertising language, we will test 3 languages: English (as baseline), French and German. We selected French because France is typically perceived as a premium wine production country, and we hypothesize that advertsizing in French will increase consumer's willingness to pay. We also selected German as a comparison language. Germany is not typically associated with wine, and therefore, by including German, we will be able to see whether the effect of having foreign language is limited to the language of the country associated with a product, or whether it expands to other languages as well.
+
+For wine's country of origin, we included US and France. Here we are particularly interested in the interaction between country of origin and advertsing language. Prior studies have found that foreign-language advertising serve as country of origin cues. By including country of origin as a variable, we are able to see whether foreign language has any additional impact when country of origin is also given.
+
+For flavor profile description, we have two versions - long and short. We believe that this could be a proxy for foreign language "dosage". A long flavor profile in French might be more noticeable than a short French tagline, and may amplify the effect that we find.
+
+To summarize, we have a 3 x 2 x 2 design, which results in 12 groups of participants. (See summary in figure 1).
+
+![Groups Design](Group_Design.png)
+
 
 Because of our time and resource constraint, we could not conduct a real-life experiement with actual wines in actual stores. Instead, we decided to conduct the study through a Qualtrics survey and gather responses through Mechanical Turk. The survey is structured into the following sections:
 
+![Survey Flow](survey_flow.png)
+
+
+We start with some demographics question about participants primary language, income and gender. These wil serve as covariates in our later model. Then, we ask participants about their wine-related behavior, including how often they drink wine, whether they like Cabernet Sauvignon, and how often they purchase bottles of wine. We think that these wine-related behavior will explain some of the variation in willingness-to-pay, and therefore will be good covariates that help us reduce our standard error. The third section is the main part of our experiement where we introduce the treament. Here, we randomly assign the participants into one of twelve groups mentioned above, and show them a simulated purchasing page (example seen in figure 3).
+
+![Page Sample](Sample_wine_page.png)
+
+In the simulated wine page, we translate all texts into the groups assigned language, and provide english translation for key elements (e.g. flavor profile, 'top wine of the year' tag) to make sure that the respondent understand the information. All groups are shown the exact same wine (which was a hypothetical wine fabricated by us), and the same descriptive information. 
+
+We then ask the respondents to guess the cost of the wine. This is an un-anchored direct pricing question, aimed to understand respondents' first perception of the wine shown. Afterwards, we use a simplified version of the Gabor Granger method developed by André Gabor and C. W. J. Granger in the 1960s [^4]. In this method, we ask respondents whether they would consider purchase the shown wine at $50. If respondents say now, we ask the same question at a lower price point of $35. If they still answers no, we lower the price further to $20. Through this series of 3 questions, we seek to understand where their true willingness-to-pay lies. We selected the 3 price points to cover a wide range of potential willingness-to-pay, and validated our choice through a pilot study of 100 respondents. From the pilot, we saw that most respondents' willingness to pay fall into the 20-50 price range.
+
+[^4]: Gabor, A. and Granger, C. (1966). Price as an Indicator of Quality: Report on an Enquiry. Economica, 33(129), p.43.
+
+Our survey is concluded after the treatment section for our main sample of 1200 respondents. We added a baseline question asking respondents to estimate the price of a gallon of milk in our second launch. We aim to use the data from our first launch as "training set", where we test different regression models, and methods, and use the second launch data as "testing set" to validate that our findings are real. The baseline milk question helps us establish a reference price points for respondents price guesses, and adjust for any overall inflated / deflated guesses.
+
+## Survey data cleaning and analysis
 ```{r, echo=FALSE}
 d = read.csv('1st_Launch_Full.csv')
 #d = d[d$Guess_the_Cost <= 2000,]
