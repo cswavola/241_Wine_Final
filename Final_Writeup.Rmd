@@ -1,12 +1,34 @@
 ---
-title: "Final_Description_analysis"
-output: html_document
+title: "W241 Final Report"
+subtitle: 'Vous voulez du vin? - Does the use of foreign language advertising in wine increase customer’s purchase likelihood?'
+author: Rory Liu, Charlotte Swavola, Sharad Varadarajan
+output:
+  pdf_document: default
+  html_document: default
+fontsize: 11pt  
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = normalizePath("./"))
 ```
 
+## Introduction
+
+When walking through the grocery store, one can easily spot products with foreign-language labels - “Vins de France” on a wine bottle, “Wirklich gut!” on a sausage pack, etc. Advertisers often confront consumers with foreign languages, such as German or French [^1]. In fact, the use of foreign language in advertising is a well-studied topic. According the study done by France Leclerc, Bernd Schmitt and Laurette Dubé,showing French pronunciation of a brand name affects the perceived hedonism of the products, attitudes toward the brand, and attitudes toward the brand name[^2]. Furthermore, Jos Hornikx and Frank van meurs in their study that the use of foreign languages serve as a strong cue for a product's country of origin, and the associations that the foreign language evoke and those that the country-of-origin evoke are similar[^3].
+
+[^1]: Jos Hornikx, Frank van Meurs & Robert-Jan Hof (2013) The Effectiveness of Foreign-Language Display in Advertising for Congruent versus Incongruent Products, Journal of International Consumer Marketing, 25:3, 152-165, DOI: 10.1080/08961530.2013.780451
+
+[^2]: Leclerc, F., B. H. Schmitt, and L. Dubé. 1994. Foreign branding and its effects on product perceptions and attitudes. Journal of Marketing Research 31 (2):263–270
+
+[^3]: Jos Hornikx & Frank van Meurs (2017) Foreign Languages in Advertising as Implicit Country-of-Origin Cues: Mechanism, Associations, and Effectiveness, Journal of International Consumer Marketing, 29:2, 60-73, DOI: 10.1080/08961530.2016.1243996
+
+While scholars seem to agree that foreign language advertising shapes product perception by implicitly giving consumers cues on product's country of origin, few of the existing studies dived deep into the causal link between foreign language and consumer’s purchase likelihood. This is an important causal link to establish. At the end of the day, the success of an advertising campaign is, or should be measured by the additional sales the campaign generates. Without understanding of whether having foreign language in product communications increases sales, advertiser will be ill-guided in their decision to apply such advertising techniques.
+
+In our study, we seek to understand the relationship between foreign language advertising and consumer willingness to pay. To narrow down our scope for a manageable experiement given our time and resource constaints, we decided to focus on one particular product: wine. The high variance of wine prices, and the strong association between place of origin and the signal on quality makes it a great subject for our study.
+
+## Experimental Design
+
+Because of our time and resource constraint, we could not conduct a real-life experiement with actual wines in actual stores. Instead, we decided to conduct the study through a Qualtrics survey and gather responses through Mechanical Turk. The survey is structured into the following sections:
 
 ```{r, echo=FALSE}
 d = read.csv('1st_Launch_Full.csv')
@@ -19,6 +41,7 @@ library(foreign)
 library(lmtest)
 library(sandwich)
 library(multiwayvcov)
+library(stargazer)
 ```
 
 
