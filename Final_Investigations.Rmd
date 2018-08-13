@@ -69,6 +69,7 @@ summary(lm.basic)
 ```{r}
 DT<-data.table(d)
 lm.basic<-lm(Guess_the_Cost~US_Origin,DT)
+summary(lm.basic)
 ```
 ###Maybe try RLM here- need to be able to explain it
 
@@ -234,7 +235,7 @@ feature_title<-"French_Purchasing_Page"
 
 RI_chartoutput<-function(DT=RI_DT, outcome=RI_outcome, RI_feature,feature_title){
   ate_obsv<-calculate_ate(DT,outcome,RI_feature)
-  ate_list<-rep_rand_Sharpnull(d,NITERS=1000,outcome,RI_feature)
+  ate_list<-rep_rand_Sharpnull(d,NITERS=10000,outcome,RI_feature)
   p_value<-mean(ate_obsv<=ate_list)
   hist(ate_list,main = sprintf("Histogram under Sharp Null \n %s: P-value %f",feature_title,p_value))
   abline(v = ate_obsv, col = "blue")
@@ -342,6 +343,20 @@ stargazer(lm.combined,lm.format,lm.origin,lm.description,main="Basic regressions
 
 ```
 ###Maybe try RLM here- need to be able to explain it
+```{r}
+#opar <- par(mfrow = c(2,2), oma = c(0, 0, 1.1, 0))
+DT$French_Purchasing_Page<-factor(DT$French_Purchasing_Page)
+DT$German_Purchasing_Page<-factor(DT$German_Purchasing_Page)
+levels(DT$German_Purchasing_Page)
+summary(rr.huber <- rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page, data = DT))
+plot(rr.huber)
+
+hweights <- data.frame(user = DT$MTurkCode, resid = rr.huber$resid, weight = rr.huber$w)
+hweights2 <- hweights[order(rr.huber$w), ]
+hweights2
+```
+
+
 
 #Ok, let's try the other output variables
 ```{r}
