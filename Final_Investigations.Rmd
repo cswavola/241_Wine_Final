@@ -41,7 +41,7 @@ complete_dedup<- dt[dt$freq_ip==1 & dt$freq_geo==1]
 #nrow(complete_dedup)
 five_or_less_dedup <- dt[dt$freq_ip==1 & dt$freq_geo<=5]
 #nrow(five_or_less_dedup)
-d<-five_or_less_dedup
+d<-complete_dedup
 ```
 #post cleaning summaries
 ```{r}
@@ -308,7 +308,7 @@ complete_dedup<- dt[dt$freq_ip==1 & dt$freq_geo==1]
 #nrow(complete_dedup)
 five_or_less_dedup <- dt[dt$freq_ip==1 & dt$freq_geo<=5]
 #nrow(five_or_less_dedup)
-d<-five_or_less_dedup
+d<-complete_dedup
 ```
 #post cleaning summaries
 ```{r}
