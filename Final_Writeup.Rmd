@@ -55,7 +55,11 @@ We then ask the respondents to guess the cost of the wine. This is an un-anchore
 
 [^4]: Gabor, A. and Granger, C. (1966). Price as an Indicator of Quality: Report on an Enquiry. Economica, 33(129), p.43.
 
-Our survey is concluded after the treatment section for our main sample of 1200 respondents. We added a baseline question asking respondents to estimate the price of a gallon of milk in our second launch. We aim to use the data from our first launch as "training set", where we test different regression models, and methods, and use the second launch data as "testing set" to validate that our findings are real. The baseline milk question helps us establish a reference price points for respondents price guesses, and adjust for any overall inflated / deflated guesses.
+Our survey is concluded after the treatment section for our main sample of 1200 respondents. We used the data from this main sample to run various regressions and randomized inferences and seek to find results with statistical significance. 
+
+However, to validate the findings from this main sample, we collected another (smaller) sample of 600 respondents. The data from this second batch of respondents served as our validation test. By running the key models we deemed important from main sample with this validation data set, we can confirm that the relationship we found is real.
+
+In our second launch, we maintained the same survey experience by asking exactly the same questions in the same sequence. However, we did introduce a baseline question at the very end of the second survey, asking respondents to estimate the price of a gallon of milk. Because this question came at the very end of the survey, it should not interfere with our treatment, and would not create any difference between the data from first and second launch. However, having this baseline questions helps us establish a reference price points for respondents price guesses, and adjust for any overall inflated / deflated guesses.
 
 ## Survey data cleaning and analysis
 ```{r, echo=FALSE}
