@@ -139,7 +139,7 @@ demographics_labels<-list(English_as_primary,Male,Household_Income,Speaks_German
 demographics=data.table(d[,.(English_as_primary,Male,Household_Income,Speaks_German,Speaks_French,Drink_Frequency,Cab_Preference,Purchase_Frequency)])
 par(mfrow=c(3,3))
 #look at randomization/tracks 
-barplot(prop.table(table(d$Track)), main="Distribution across Tracks, Normalized", names.arg = c(0:12))
+barplot(prop.table(table(d$Track)), main="Distribution across Tracks, Normalized", names.arg = c(0:13))
 #Important to note- 0 on barchart is N/A or attrition.
 #demographic summary
 
@@ -186,7 +186,7 @@ d<-five_or_less_dedup
 d<-data.table(d)
 par(mfrow=c(3,3))
 #look at randomization/tracks 
-barplot(prop.table(table(d$Track)),main="Distribution across Tracks, Normalized",names.arg = c(0:12))
+barplot(prop.table(table(d$Track)),main="Distribution across Tracks, Normalized",names.arg = c(0:13))
 #Important to note- 0 on barchart is N/A or attrition.
 
 
