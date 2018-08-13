@@ -251,7 +251,11 @@ RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$German_Purchasing_Page,"German P
 par(mfrow=c(2,1))
 RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$US_Origin,"US Origin (vs French)")
 RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$Long_Description,"Long Description")
-
+#Interactions- same format/origin, French, US
+par(mfrow=c(3,1))
+RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$same_format_origin,"Same Origin and Format (US/French)")
+RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$English_format_wine,"Interaction: English Format, US Origin")
+RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$French_format_wine,"Interaction: French Format and Origin")
 ```
 ##RI for French/German over baseline
 ```{r}
@@ -327,14 +331,15 @@ five_or_less_dedup %>%
 ###Treatment: Page Format
 ```{r}
 DT<-data.table(d)
-lm.basic<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page,DT)
-summary(lm.basic)
-```
-###Treatment: Wine Origin 
-```{r}
-DT<-data.table(d)
-lm.basic<-lm(Guess_the_Cost~US_Origin,DT)
-summary(lm.basic)
+lm.format<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page,DT)
+
+lm.origin<-lm(Guess_the_Cost~US_Origin,DT)
+
+lm.description<-lm(Guess_the_Cost~Long_Description,DT)
+
+lm.combined<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description,DT)
+stargazer(lm.combined,lm.format,lm.origin,lm.description,main="Basic regressions- no covariates", align=TRUE, type="text")
+
 ```
 ###Maybe try RLM here- need to be able to explain it
 
@@ -367,9 +372,8 @@ d$Male<-as.factor(d$Male)
 #household income- as factor due to <20k, >100k, and do not answer
 d$Household_Income<-as.factor(d$Household_Income)
 #Other languages- Blank is only English, French 1, German 2, Other 3
-d$Speaks_German<-as.numeric(d[,Other_Language_Spoken %like% "2"])
-d$Speaks_French<-as.numeric(d[,Other_Language_Spoken %like% "1"])
-length(d$Speaks_French)
+#d$Speaks_German<-as.numeric(d[,Other_Language_Spoken %like% "2"])
+#d$Speaks_French<-as.numeric(d[,Other_Language_Spoken %like% "1"])
 #Drink Frequency- options are not linear 
 d$Drink_Frequency<-factor(d$Drink_Frequency)
 
@@ -383,7 +387,7 @@ d$Purchase_Frequency<-factor(d$Purchase_Frequency)
 ```{r}
 #basic covariate model, treatment is format
 lm.cv<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary  + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT)
-stargazer(lm.basic,lm.cv)
+stargazer(lm.basic,lm.cv,align=TRUE,type="text")
 ```
 #Saturated model
 ```{r}
