@@ -777,36 +777,24 @@ test_table<-DT_95[French_Purchasing_Page==0]
 RI_chartoutput(DT=test_table,outcome=test_table$Guess_the_Cost,RI_feature=test_table$German_Purchasing_Page,feature_title = "German Page, Over Baseline")
 ```
 
-=======
----
-title: "Final_investigations"
-output: html_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = normalizePath("./"))
-d = read.csv('1st_Launch_Full.csv')
-library(MASS)
-```
-
-
+#Second launch
 #2. Pre-clean General summaries- already in writeup
 ```{r}
-summary(d$Guess_the_Cost[d$French_Purchasing_Page == 1]) #French language only
-summary(d$Guess_the_Cost[d$German_Purchasing_Page == 1]) #German language only
-summary(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0]) #English language only
-
+d2 = read.csv('With_Second_Launch.csv')
+d2<-data.table(d2)
+#Sort for second launch
+d2<-d2[Milk_Cost!=""]
+stargazer(d2,summary=TRUE,type="text")
 ```
 ## De-dupping & cleaning
 ```{r deduping}
 library(data.table)
 # Cleaning out incomplete responses before treament exposures
-d <- d[!is.na(d$Track),]
+d2 <- d2[!is.na(d2$Track),]
 #summary(d)
 # Counting occurances of IP address and Geo-codes
-d$geo_code <- paste(d$LocationLatitude, d$LocationLongitude)
-dt = data.table(d)
+d2$geo_code <- paste(d2$LocationLatitude, d2$LocationLongitude)
+dt = data.table(d2)
 dt[, `freq_geo` := .N, by = geo_code]
 dt[, `freq_ip` := .N, by = IPAddress]
 #class(as.data.frame(dt))
@@ -816,28 +804,56 @@ complete_dedup<- dt[dt$freq_ip==1 & dt$freq_geo==1]
 #nrow(complete_dedup)
 five_or_less_dedup <- dt[dt$freq_ip==1 & dt$freq_geo<=5]
 #nrow(five_or_less_dedup)
-d<-five_or_less_dedup
+d2<-complete_dedup
+stargazer(d2,summary=TRUE,type="text")
 ```
-#post cleaning summaries
+###Methods for Milk factors:
 ```{r}
-summary(five_or_less_dedup$Guess_the_Cost[d$French_Purchasing_Page == 1]) #French language only
-summary(five_or_less_dedup$Guess_the_Cost[d$German_Purchasing_Page == 1]) #German language only
-summary(five_or_less_dedup$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0]) #English language only
-
+#Milk a Factor of wine. only apply to relative filter
+d2$Milk_Multiplier<-d2[,Guess_the_Cost/Milk_Cost]
+d2_Milkfilter_abs<-d2[Milk_Cost<10 & Milk_Cost >0]
+stargazer(d2_Milkfilter_abs, summary = TRUE, type = "text")
+par(mfrow=c(1,2))
+hist(d2_Milkfilter_abs$Milk_Multiplier,breaks = c(0,1,5,10,15,20,25,30,35,40,45,50,55),main="Histogram of Wine/Milk cost",xlab="$Milk * X = $Wine")
+plot(d2_Milkfilter_abs$Milk_Cost,d2_Milkfilter_abs$Guess_the_Cost,main="Wine cost vs Milk cost \nFiltered, Milk<$10")
 ```
-## Checking attrition 
-## After dedputing, we take a look at our attrition by track, and noticing that we have zero attrition for all tracks
-```{r checking attrition}
-library(dplyr)
-five_or_less_dedup %>%
-  group_by(Finished, Track) %>%
-  summarise(count= n())
+
+```{r}
+#code for multiple filtering methods- plz ignore
+par(mfrow=c(2,2))
+hist(d2$Guess_the_Cost,main="Wine cost\nNo filter")
+hist(d2_Milkfilter_wine$Guess_the_Cost,main="Wine cost\n$Milk< $Wine")
+hist(d2_Milkfilter_abs_100$Guess_the_Cost,main="Wine cost\nFiltered, Milk<$100")
+hist(d2_Milkfilter_abs_10$Guess_the_Cost,main="Wine cost\nFiltered, Milk<$10")
+
+
+par(mfrow=c(1,3))
+plot(d2$Milk_Cost,d2$Guess_the_Cost,main="Wine cost vs Milk cost \nNo filter")
+plot(d2_Milkfilter_abs$Milk_Cost,d2_Milkfilter$Guess_the_Cost,main="Wine cost vs Milk cost \nFiltered, Milk<$10")
+plot(d2_Milkfilter_wine$Milk_Cost,d2_Milkfilter_wine$Guess_the_Cost,main="Wine cost vs Milk cost \nFiltered, Milk<Wine")
+hist(d2_Milkfilter_abs$Milk_Multiplier,breaks = c(0,1,5,10,15,20,25,30,35,40,45,50,55),main="Histogram of Wine cost/Milk cost",xlab="$Milk * X = $Wine")
+
+length(d2_Milkfilter_abs_10$Milk_Cost)
+plot(d2$Milk_Cost,d2$Guess_the_Cost,main="Wine cost vs Milk cost \nNo filter",xlim = c(0,50))
+hist(d2[Milk_Cost<100]$Milk_Cost)
+length(d2_Milkfilter_abs_10)
+```
+
+
+
+###post cleaning summaries
+```{r}
+summary(d2$Guess_the_Cost[d2$French_Purchasing_Page == 1]) #French language only
+summary(d2$Guess_the_Cost[d2$German_Purchasing_Page == 1]) #German language only
+summary(d2$Guess_the_Cost[d2$German_Purchasing_Page == 0 & d2$French_Purchasing_Page == 0]) #English language only
+
 ```
 
 #Data investigations
 ##Most basic regressions, does not include demographic covariates
 ###Treatment: Page Format
 ```{r}
+d<-d2
 DT<-data.table(d)
 lm.format<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page,DT)
 
@@ -862,23 +878,6 @@ hweights <- data.frame(user = DT$MTurkCode, resid = rr.huber$resid, weight = rr.
 hweights2 <- hweights[order(rr.huber$w), ]
 hweights2
 ```
-
-
-
-#Ok, let's try the other output variables
-```{r}
-#Change GG questions to "Max purchase" integer column
-d<-five_or_less_dedup
-d$max_purchase<-rep(0,length(d$Purchase_50))
-DT<-data.table(d)
-DT[Purchase_20==1,max_purchase:=20]
-DT[Purchase_35==1,max_purchase:=35]
-DT[Purchase_50==1,max_purchase:=50]
-#summary(DT$max_purchase)
-#barplot()
-hist(DT$max_purchase,main = "Max price willing to pay",breaks=c(0,20,35,50))
-```
-
 
 ##Adding in Covariates
 ```{r}
@@ -1024,5 +1023,3 @@ test_table<-DT_95[French_Purchasing_Page==0]
 RI_chartoutput(DT=test_table,outcome=test_table$Guess_the_Cost,RI_feature=test_table$German_Purchasing_Page,feature_title = "German Page, Over Baseline")
 ```
 
->>>>>>> 2e209e496786e84a775435226e38fb19be4be730
->>>>>>> edb7e5a2b5a096c6ca9a62d64712c45c6a102af5
