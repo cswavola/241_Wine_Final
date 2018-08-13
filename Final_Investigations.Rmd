@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ---
 output:
   html_document: default
@@ -503,3 +504,525 @@ RI_chartoutput(DT=test_table,outcome=test_table$Guess_the_Cost,RI_feature=test_t
 ```
 
 >>>>>>> 2e209e496786e84a775435226e38fb19be4be730
+=======
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+<<<<<<< HEAD
+---
+title: "Final_investigations"
+output: html_document
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath("./"))
+d = read.csv('1st_Launch_Full.csv')
+library(MASS)
+library(stargazer)
+```
+#2. Pre-clean General summaries- already in writeup
+```{r}
+summary(d$Guess_the_Cost[d$French_Purchasing_Page == 1]) #French language only
+summary(d$Guess_the_Cost[d$German_Purchasing_Page == 1]) #German language only
+summary(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0]) #English language only
+
+```
+## De-dupping & cleaning
+```{r}
+library(data.table)
+# Cleaning out incomplete responses before treament exposures
+d <- d[!is.na(d$Track),]
+#summary(d)
+# Counting occurances of IP address and Geo-codes
+d$geo_code <- paste(d$LocationLatitude, d$LocationLongitude)
+dt = data.table(d)
+dt[, `freq_geo` := .N, by = geo_code]
+dt[, `freq_ip` := .N, by = IPAddress]
+#class(as.data.frame(dt))
+#dt
+## Creatig 2 dedupped dataset, one with complete dedup where we do not allow any duplicates in IP or Geo code, and one where we exclude IP dupes, but allow up to 5 dups per geo code
+complete_dedup<- dt[dt$freq_ip==1 & dt$freq_geo==1]
+#nrow(complete_dedup)
+five_or_less_dedup <- dt[dt$freq_ip==1 & dt$freq_geo<=5]
+#nrow(five_or_less_dedup)
+d<-five_or_less_dedup
+```
+#post cleaning summaries
+```{r}
+#stargazer(d$Guess_the_Cost[d$French_Purchasing_Page == 1],d$Guess_the_Cost[d$German_Purchasing_Page == 1],d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0],summary=TRUE) #English language only
+
+```
+## Checking attrition 
+## After dedputing, we take a look at our attrition by track, and noticing that we have zero attrition for all tracks
+```{r}
+library(dplyr)
+five_or_less_dedup %>%
+  group_by(Finished, Track) %>%
+  summarise(count= n())
+```
+
+#Data investigations
+##Most basic regressions, does not include demographic covariates
+###Treatment: Page Format
+```{r}
+DT<-data.table(d)
+lm.basic<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page,DT)
+summary(lm.basic)
+```
+###Treatment: Wine Origin 
+```{r}
+DT<-data.table(d)
+lm.basic<-lm(Guess_the_Cost~US_Origin,DT)
+summary(lm.basic)
+```
+###Maybe try RLM here- need to be able to explain it
+
+#Ok, let's try the other output variables
+```{r}
+#Change GG questions to "Max purchase" integer column
+d$max_purchase<-rep(19,length(d$Purchase_50))
+DT<-data.table(d)
+DT[Purchase_20==1,max_purchase:=34]
+DT[Purchase_35==1,max_purchase:=49]
+DT[Purchase_50==1,max_purchase:=50]
+summary(DT$max_purchase)
+hist(DT$max_purchase,main = "Max price willing to pay",breaks=c(0,19,34,49,55),xlab = "Purchase Price")
+
+```
+
+
+##Adding in Covariates
+```{r}
+#NOTE: this cell is ALREADY in writeup
+#Process/clean variables- covariates
+d<-data.table(d)
+#English as primary language
+d$English_as_primary<-d[,.(abs(d$English_as_primary-2))]
+d$English_as_primary<-as.factor(d$English_as_primary)
+#Male: original, male=1, female=2
+d$Male<-d[,.(abs(d$Male-2))]
+d$Male<-as.factor(d$Male)
+#household income- as factor due to <20k, >100k, and do not answer
+d$Household_Income<-as.factor(d$Household_Income)
+#Other languages- Blank is only English, French 1, German 2, Other 3
+#d$Speaks_German<-as.numeric(d[,Other_Language_Spoken %like% "2"])
+#d$Speaks_French<-as.numeric(d[,Other_Language_Spoken %like% "1"])
+
+#Drink Frequency- options are not linear 
+d$Drink_Frequency<-factor(d$Drink_Frequency)
+
+#Cab preference
+d$Cab_Preference<-d[,.(abs(d$Cab_Preference-2))]
+
+#Purchase Frequency- also not linear
+d$Purchase_Frequency<-factor(d$Purchase_Frequency)
+```
+
+```{r}
+#basic covariate model, treatment is format
+lm.cv_format<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency ,d)
+#stargazer(lm.basic,lm.cv, title= "Basic Regressions",type="latex")
+
+#covariates, treatment origin
+lm.cv_origin<-lm(Guess_the_Cost~US_Origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency ,d)
+#summary(lm.cv_origin)
+
+#covariates, treatment description
+lm.cv_description<-lm(Guess_the_Cost~Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency ,d)
+#summary(lm.cv_description)
+
+stargazer(lm.basic,lm.cv_format,lm.cv_origin,lm.cv_description, title= "Basic Regressions",type="text", align=TRUE)
+```
+##Saturated model
+```{r}
+d$Track<-factor(d$Track)
+lm.saturated<-lm(Guess_the_Cost~ Track + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
+summary(lm.saturated)
+```
+
+
+
+
+
+##Interactions
+```{r}
+#same origin/format binary
+d<-data.table(d)
+d$same_format_origin<-rep(0,length(d$French_Purchasing_Page))
+d[French_Purchasing_Page==1 & US_Origin==0,same_format_origin :=1]
+d[German_Purchasing_Page==0 & French_Purchasing_Page==0 & US_Origin==1,same_format_origin :=1]
+#French layout+french wine
+d$French_format_wine<-rep(0,length(d$French_Purchasing_Page))
+d[French_Purchasing_Page==1 & US_Origin==0,"French_format_wine" :=1]
+#English layout + US wine
+d$English_format_wine<-rep(0,length(d$French_Purchasing_Page))
+d[German_Purchasing_Page==0 & French_Purchasing_Page==0 & US_Origin==1,"English_format_wine" :=1]
+
+#models
+lm.same<-lm(Guess_the_Cost ~  same_format_origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency ,d)
+#summary(lm.same)
+lm.same_indiv<-lm(d$Guess_the_Cost ~ French_format_wine + English_format_wine + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
+stargazer(lm.same,lm.same_indiv,align=TRUE,type="text")
+```
+
+
+
+#RI with limit on guesses
+```{r}
+DT<-data.table(d)
+#for RI, only using the bottom 95%
+boxplot(DT$Guess_the_Cost,horizontal = TRUE)
+title("Boxplot for Guesses including upper outliers")
+DT_95<-DT[Guess_the_Cost < quantile(DT$Guess_the_Cost,.95)]
+boxplot(DT_95$Guess_the_Cost,horizontal = TRUE)
+title("Boxplot for Guesses, bottom 95%")
+```
+
+
+```{r, include=FALSE}
+#Set up RI for 0-95 of guesses
+set.seed(0)
+RI_DT<-DT_95
+RI_outcome<-DT_95$Guess_the_Cost
+RI_feature<-DT_95$French_Purchasing_Page
+
+#2. calculate ate function
+calculate_ate<- function(d=RI_DT,outcome,feature){
+control<-outcome[feature==0]
+treatment<-outcome[feature==1]
+ate<-mean(treatment)-mean(control)
+return(ate)
+}
+
+#observed ate
+ate_obsv<-calculate_ate(RI_DT,RI_outcome,RI_feature)
+#ate_obsv
+#DT_95[French_Purchasing_Page==1,mean(Guess_the_Cost)]-DT_95[French_Purchasing_Page==0,mean(Guess_the_Cost)]
+
+#3. Assume sharp null
+#make new table with randomized features (input)
+random_it<-function(d,outcome,feature){
+d_new<-data.frame(X=sample(feature),Y=outcome)
+ate<-calculate_ate(d_new,d_new$Y,d_new$X)
+return(ate)
+}
+#random_it(RI_DT,RI_outcome,RI_feature)
+
+#4. rinse and repeat
+rep_rand_Sharpnull<-function(d,NITERS,outcome,feature){
+ate_list<-rep(NA, NITERS)
+  for (i in (1:NITERS)){
+    ate_list[i]<- random_it(d,outcome,feature)
+  }
+return(ate_list)
+}
+```
+
+```{r, include=FALSE}
+
+#original, non-function RI
+#ate_obsv<-calculate_ate(RI_DT,RI_outcome,RI_feature)
+#ate_list<-rep_rand_Sharpnull(d,NITERS=100,RI_outcome,RI_feature)
+#p_value<-mean(ate_obsv<=ate_list)
+#hist(ate_list,main = sprintf("Histogram under Sharp Null \n %s: P-value %f",feature_title,p_value))
+#abline(v = ate_obsv, col = "blue")
+
+
+#RI for French Page, under %95
+RI_DT<-DT_95
+RI_outcome<-DT_95$Guess_the_Cost
+
+#loopable variables
+RI_feature<-DT_95$French_Purchasing_Page
+feature_title<-"French_Purchasing_Page"
+
+
+RI_chartoutput<-function(DT=RI_DT, outcome=RI_outcome, RI_feature,feature_title){
+  ate_obsv<-calculate_ate(DT,outcome,RI_feature)
+  ate_list<-rep_rand_Sharpnull(d,NITERS=10000,outcome,RI_feature)
+  p_value<-mean(ate_obsv<=ate_list)
+  hist(ate_list,main = sprintf("Histogram under Sharp Null \n %s: P-value %f",feature_title,p_value))
+  abline(v = ate_obsv, col = "blue")
+  }
+
+```
+##Basic RI for all treatments
+```{r}
+#Formats
+par(mfrow=c(2,1))
+RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$French_Purchasing_Page,"French Purchasing Page")
+RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$German_Purchasing_Page,"German Purchasing Page")
+#Wine origin, Description
+par(mfrow=c(2,1))
+RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$US_Origin,"US Origin (vs French)")
+RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$Long_Description,"Long Description")
+#Interactions- same format/origin, French, US
+par(mfrow=c(3,1))
+RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$same_format_origin,"Same Origin and Format (US/French)")
+RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$English_format_wine,"Interaction: English Format, US Origin")
+RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$French_format_wine,"Interaction: French Format and Origin")
+```
+##RI for French/German over baseline
+```{r}
+#testing RI of French/German over baseline
+par(mfrow=c(2,1))
+#French over baseline, excludes German formats
+test_table<-DT_95[German_Purchasing_Page==0]
+RI_chartoutput(DT=test_table,outcome=test_table$Guess_the_Cost,RI_feature=test_table$French_Purchasing_Page,feature_title = "French Page, Over Baseline")
+#German over baseline
+test_table<-DT_95[French_Purchasing_Page==0]
+RI_chartoutput(DT=test_table,outcome=test_table$Guess_the_Cost,RI_feature=test_table$German_Purchasing_Page,feature_title = "German Page, Over Baseline")
+```
+
+=======
+---
+title: "Final_investigations"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath("./"))
+d = read.csv('1st_Launch_Full.csv')
+library(MASS)
+```
+
+
+#2. Pre-clean General summaries- already in writeup
+```{r}
+summary(d$Guess_the_Cost[d$French_Purchasing_Page == 1]) #French language only
+summary(d$Guess_the_Cost[d$German_Purchasing_Page == 1]) #German language only
+summary(d$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0]) #English language only
+
+```
+## De-dupping & cleaning
+```{r deduping}
+library(data.table)
+# Cleaning out incomplete responses before treament exposures
+d <- d[!is.na(d$Track),]
+#summary(d)
+# Counting occurances of IP address and Geo-codes
+d$geo_code <- paste(d$LocationLatitude, d$LocationLongitude)
+dt = data.table(d)
+dt[, `freq_geo` := .N, by = geo_code]
+dt[, `freq_ip` := .N, by = IPAddress]
+#class(as.data.frame(dt))
+#dt
+## Creatig 2 dedupped dataset, one with complete dedup where we do not allow any duplicates in IP or Geo code, and one where we exclude IP dupes, but allow up to 5 dups per geo code
+complete_dedup<- dt[dt$freq_ip==1 & dt$freq_geo==1]
+#nrow(complete_dedup)
+five_or_less_dedup <- dt[dt$freq_ip==1 & dt$freq_geo<=5]
+#nrow(five_or_less_dedup)
+d<-five_or_less_dedup
+```
+#post cleaning summaries
+```{r}
+summary(five_or_less_dedup$Guess_the_Cost[d$French_Purchasing_Page == 1]) #French language only
+summary(five_or_less_dedup$Guess_the_Cost[d$German_Purchasing_Page == 1]) #German language only
+summary(five_or_less_dedup$Guess_the_Cost[d$German_Purchasing_Page == 0 & d$French_Purchasing_Page == 0]) #English language only
+
+```
+## Checking attrition 
+## After dedputing, we take a look at our attrition by track, and noticing that we have zero attrition for all tracks
+```{r checking attrition}
+library(dplyr)
+five_or_less_dedup %>%
+  group_by(Finished, Track) %>%
+  summarise(count= n())
+```
+
+#Data investigations
+##Most basic regressions, does not include demographic covariates
+###Treatment: Page Format
+```{r}
+DT<-data.table(d)
+lm.format<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page,DT)
+
+lm.origin<-lm(Guess_the_Cost~US_Origin,DT)
+
+lm.description<-lm(Guess_the_Cost~Long_Description,DT)
+
+lm.combined<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description,DT)
+stargazer(lm.combined,lm.format,lm.origin,lm.description,main="Basic regressions- no covariates", align=TRUE, type="text")
+
+```
+###Maybe try RLM here- need to be able to explain it
+```{r}
+#opar <- par(mfrow = c(2,2), oma = c(0, 0, 1.1, 0))
+DT$French_Purchasing_Page<-factor(DT$French_Purchasing_Page)
+DT$German_Purchasing_Page<-factor(DT$German_Purchasing_Page)
+levels(DT$German_Purchasing_Page)
+summary(rr.huber <- rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page, data = DT))
+plot(rr.huber)
+
+hweights <- data.frame(user = DT$MTurkCode, resid = rr.huber$resid, weight = rr.huber$w)
+hweights2 <- hweights[order(rr.huber$w), ]
+hweights2
+```
+
+
+
+#Ok, let's try the other output variables
+```{r}
+#Change GG questions to "Max purchase" integer column
+d<-five_or_less_dedup
+d$max_purchase<-rep(0,length(d$Purchase_50))
+DT<-data.table(d)
+DT[Purchase_20==1,max_purchase:=20]
+DT[Purchase_35==1,max_purchase:=35]
+DT[Purchase_50==1,max_purchase:=50]
+#summary(DT$max_purchase)
+#barplot()
+hist(DT$max_purchase,main = "Max price willing to pay",breaks=c(0,20,35,50))
+```
+
+
+##Adding in Covariates
+```{r}
+#NOTE: this cell is ALREADY in writeup
+#Process/clean variables- covariates
+d<-data.table(d)
+#English as primary language
+d$English_as_primary<-d[,.(abs(d$English_as_primary-2))]
+d$English_as_primary<-as.factor(d$English_as_primary)
+#Male: original, male=1, female=2
+d$Male<-d[,.(abs(d$Male-2))]
+d$Male<-as.factor(d$Male)
+#household income- as factor due to <20k, >100k, and do not answer
+d$Household_Income<-as.factor(d$Household_Income)
+#Other languages- Blank is only English, French 1, German 2, Other 3
+#d$Speaks_German<-as.numeric(d[,Other_Language_Spoken %like% "2"])
+#d$Speaks_French<-as.numeric(d[,Other_Language_Spoken %like% "1"])
+#Drink Frequency- options are not linear 
+d$Drink_Frequency<-factor(d$Drink_Frequency)
+
+#Cab preference
+d$Cab_Preference<-d[,.(abs(d$Cab_Preference-2))]
+
+#Purchase Frequency- also not linear
+d$Purchase_Frequency<-factor(d$Purchase_Frequency)
+```
+
+```{r}
+#basic covariate model, treatment is format
+lm.cv<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary  + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT)
+stargazer(lm.basic,lm.cv,align=TRUE,type="text")
+```
+#Saturated model
+```{r}
+DT$Track<-factor(DT$Track)
+lm.saturated<-lm(Guess_the_Cost~ Track + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT)
+summary(lm.saturated)
+```
+
+
+
+
+#RI with limit on guesses
+```{r}
+DT<-data.table(d)
+#for RI, only using the bottom 95percent
+boxplot(DT$Guess_the_Cost,horizontal = TRUE)
+title("Boxplot for Guesses including upper outliers")
+DT_95<-DT[Guess_the_Cost < quantile(DT$Guess_the_Cost,.95)]
+boxplot(DT_95$Guess_the_Cost,horizontal = TRUE)
+title("Boxplot for Guesses, bottom 95 percent")
+```
+
+
+```{r, include=FALSE}
+#Set up RI for 0-95 of guesses
+set.seed(0)
+RI_DT<-DT_95
+RI_outcome<-DT_95$Guess_the_Cost
+RI_feature<-DT_95$French_Purchasing_Page
+
+#2. calculate ate function
+calculate_ate<- function(d=RI_DT,outcome,feature){
+control<-outcome[feature==0]
+treatment<-outcome[feature==1]
+ate<-mean(treatment)-mean(control)
+return(ate)
+}
+
+#observed ate
+ate_obsv<-calculate_ate(RI_DT,RI_outcome,RI_feature)
+#ate_obsv
+#DT_95[French_Purchasing_Page==1,mean(Guess_the_Cost)]-DT_95[French_Purchasing_Page==0,mean(Guess_the_Cost)]
+
+#3. Assume sharp null
+#make new table with randomized features (input)
+random_it<-function(d,outcome,feature){
+d_new<-data.frame(X=sample(feature),Y=outcome)
+ate<-calculate_ate(d_new,d_new$Y,d_new$X)
+return(ate)
+}
+#random_it(RI_DT,RI_outcome,RI_feature)
+
+#4. rinse and repeat
+rep_rand_Sharpnull<-function(d,NITERS,outcome,feature){
+ate_list<-rep(NA, NITERS)
+  for (i in (1:NITERS)){
+    ate_list[i]<- random_it(d,outcome,feature)
+  }
+return(ate_list)
+}
+```
+
+```{r, include=FALSE}
+
+#original, non-function RI
+#ate_obsv<-calculate_ate(RI_DT,RI_outcome,RI_feature)
+#ate_list<-rep_rand_Sharpnull(d,NITERS=100,RI_outcome,RI_feature)
+#p_value<-mean(ate_obsv<=ate_list)
+#hist(ate_list,main = sprintf("Histogram under Sharp Null \n %s: P-value %f",feature_title,p_value))
+#abline(v = ate_obsv, col = "blue")
+
+
+#RI for French Page, under %95
+RI_DT<-DT_95
+RI_outcome<-DT_95$Guess_the_Cost
+
+#loopable variables
+RI_feature<-DT_95$French_Purchasing_Page
+feature_title<-"French_Purchasing_Page"
+
+
+RI_chartoutput<-function(DT=RI_DT, outcome=RI_outcome, RI_feature,feature_title){
+  ate_obsv<-calculate_ate(DT,outcome,RI_feature)
+  ate_list<-rep_rand_Sharpnull(d,NITERS=1000,outcome,RI_feature)
+  p_value<-mean(ate_obsv<=ate_list)
+  hist(ate_list,main = sprintf("Histogram under Sharp Null \n %s: P-value %f",feature_title,p_value))
+  abline(v = ate_obsv, col = "blue")
+  }
+
+```
+##Basic RI for all treatments
+```{r}
+#Formats
+par(mfrow=c(2,1))
+RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$French_Purchasing_Page,"French Purchasing Page")
+RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$German_Purchasing_Page,"German Purchasing Page")
+#Wine origin, Description
+par(mfrow=c(2,1))
+RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$US_Origin,"US Origin (vs French)")
+RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$Long_Description,"Long Description")
+
+```
+##RI for French/German over baseline
+```{r}
+#testing RI of French/German over baseline
+par(mfrow=c(2,1))
+#French over baseline, excludes German formats
+test_table<-DT_95[German_Purchasing_Page==0]
+RI_chartoutput(DT=test_table,outcome=test_table$Guess_the_Cost,RI_feature=test_table$French_Purchasing_Page,feature_title = "French Page, Over Baseline")
+#German over baseline
+test_table<-DT_95[French_Purchasing_Page==0]
+RI_chartoutput(DT=test_table,outcome=test_table$Guess_the_Cost,RI_feature=test_table$German_Purchasing_Page,feature_title = "German Page, Over Baseline")
+```
+
+>>>>>>> 2e209e496786e84a775435226e38fb19be4be730
+>>>>>>> edb7e5a2b5a096c6ca9a62d64712c45c6a102af5
