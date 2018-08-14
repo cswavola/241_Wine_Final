@@ -45,9 +45,7 @@ d$Male<-d[,.(abs(d$Male-2))]
 d$Male<-as.factor(d$Male)
 #household income- as factor due to <20k, >100k, and do not answer
 d$Household_Income<-as.factor(d$Household_Income)
-#Other languages- Blank is only English, French 1, German 2, Other 3
-#d$Speaks_German<-as.numeric(d[,Other_Language_Spoken %like% "2"])
-#d$Speaks_French<-as.numeric(d[,Other_Language_Spoken %like% "1"])
+
 #Drink Frequency- options are not linear 
 d$Drink_Frequency<-factor(d$Drink_Frequency)
 
@@ -56,6 +54,18 @@ d$Cab_Preference<-d[,.(abs(d$Cab_Preference-2))]
 
 #Purchase Frequency- also not linear
 d$Purchase_Frequency<-factor(d$Purchase_Frequency)
+
+
+d$same_format_origin<-rep(0,length(d$French_Purchasing_Page))
+d[French_Purchasing_Page==1 & US_Origin==0,same_format_origin :=1]
+d[German_Purchasing_Page==0 & French_Purchasing_Page==0 & US_Origin==1,same_format_origin :=1]
+#French layout+french wine
+d$French_format_wine<-rep(0,length(d$French_Purchasing_Page))
+d[French_Purchasing_Page==1 & US_Origin==0,"French_format_wine" :=1]
+#English layout + US wine
+d$English_format_wine<-rep(0,length(d$French_Purchasing_Page))
+d[German_Purchasing_Page==0 & French_Purchasing_Page==0 & US_Origin==1,"English_format_wine" :=1]
+
 ```
 
 #Attrition
@@ -74,7 +84,7 @@ stargazer(lm_attrit_format,lm_attrit_origin,lm_attrit_descrip, title="Attrition 
 ```
 ##Covariate Balance Check
 
-**The p-value on the Fstat is insignificant for all covariate balance regression tests, meaning we cannot reject the null hypothesis that all coefficients are equal to 0**
+**The p-value on the Fstats are insignificant for all covariate balance regression tests, meaning we cannot reject the null hypothesis that all coefficients are equal to 0**
 ```{r}
 
 d$French_Purchasing_Page = as.numeric(as.character(d$French_Purchasing_Page))
@@ -97,10 +107,140 @@ Origin_cb = lm(US_Origin ~ Male + Household_Income + English_as_primary + Drink_
 #Long Description vs Short Description
 LD_cb = lm(Long_Description ~ Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, data = d)
 
-stargazer(French_cb,German_cb,French_German_cb,LD_cb, Origin_cb, title ="Covariate Balance Regressions", align=TRUE, type="text", font.size  = "tiny", column.sep.width = "0.5pt")
+stargazer(French_cb,German_cb,French_German_cb,LD_cb, Origin_cb, title ="Covariate Balance Regressions", align=TRUE, type="text",font.size= "scriptsize", column.sep.width = "0.5pt")
 
 
 ```
 
+#GUESS THE PRICE
 
+```{r}
+d$French_Purchasing_Page<-factor(d$French_Purchasing_Page)
+d$German_Purchasing_Page<-factor(d$German_Purchasing_Page)
+d$US_Origin <- factor(d$US_Origin)
+d$Long_Description <- factor(d$Long_Description)
+
+d$Male = as.character(d$Male)
+d$Household_Income = as.character(d$Household_Income)
+d$Cab_Preference = as.character(d$Cab_Preference)
+d$English_as_primary = as.character(d$English_as_primary)
+d$Drink_Frequency = as.character(d$Drink_Frequency)
+d$Purchase_Frequency = as.character(d$Purchase_Frequency)
+
+```
+
+#Individual Treatments- RLM regressions with no covariates
+
+**No statistical significance in treatments**
+```{r}
+rlm.format<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page, d)
+rlm.origin<-rlm(Guess_the_Cost~US_Origin,d)
+rlm.description<-rlm(Guess_the_Cost~Long_Description,d)
+rlm.combined<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description,d)
+
+
+stargazer(rlm.combined,rlm.format,rlm.origin,rlm.description,title="RLM Basic regressions- no covariates", align=TRUE, type="text")
+```
+
+#Individual Treatments- RLM regressions with covariates
+
+**No statistical significance in treatments**
+```{r}
+
+rlm.cv<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description +  Male + Household_Income + English_as_primary  + Drink_Frequency + Cab_Preference + Purchase_Frequency, d)
+
+rlm.cv1<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary  + Drink_Frequency + Cab_Preference + Purchase_Frequency, d)
+
+rlm.cv2 <- rlm(Guess_the_Cost~ US_Origin + Male + Household_Income + English_as_primary  + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
+
+rlm.cv3 <- rlm(Guess_the_Cost~ Long_Description + Male + Household_Income + English_as_primary  + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
+
+stargazer(rlm.cv, rlm.cv1, rlm.cv2, rlm.cv3, align=TRUE,type="text", title = "RLM Basic regressions- with covariates")
+```
+
+#Saturated
+
+**No statistical significance for treatments**
+```{r}
+d$Track<-factor(d$Track)
+
+rlm.saturated<-rlm(Guess_the_Cost~ Track + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
+
+stargazer(rlm.saturated, align=TRUE,type="text", title = "RLM regressions- saturated")
+```
+
+#Full Interactions without covariates
+
+**Statistical Significance at the 10% level for Long Description**
+
+```{r}
+rlm.interactions<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description + US_Origin * Long_Description + French_Purchasing_Page * US_Origin * Long_Description + German_Purchasing_Page* US_Origin * Long_Description,d)
+
+stargazer(rlm.interactions, align=TRUE,type="text", title = "RLM regression- with interactions")
+```
+
+
+#Interaction Pairs without covariates
+
+#Statistical Significance at the 5% level for Long Description (regression without language format)
+#Statistical Significance at the 10% level for interaction term Long Description with US Origin (regression without language format)
+```{r}
+rlm.i1<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin,d)
+
+rlm.i2<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description,d)
+
+rlm.i3<- rlm(Guess_the_Cost~ US_Origin + Long_Description + US_Origin * Long_Description, d)
+
+stargazer(rlm.i1, rlm.i2, rlm.i3, align=TRUE,type="text", title = "RLM regression- with interactions")
+```
+
+##Interaction Pairs with covariates
+
+#Statistical Significance at the 10% level for Long Description (regression without language format)
+#Statistical Significance at the 10% level for interaction term Long Description with US Origin (regression without language format)
+
+```{r}
+rlm.i1<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
+
+rlm.i2<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
+
+rlm.i3<- rlm(Guess_the_Cost~ US_Origin + Long_Description + US_Origin * Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, d)
+
+stargazer(rlm.i1, rlm.i2, rlm.i3, align=TRUE,type="text", title = "RLM regression- with interactions")
+```
+
+#Interactions - Same Format/Origin without covariates
+**No statistical significance for treatment**
+```{r}
+#models
+rlm.same<-rlm(Guess_the_Cost ~ same_format_origin, d)
+#summary(lm.same)
+
+rlm.same_indiv<-rlm(Guess_the_Cost ~ French_format_wine + English_format_wine, d)
+
+stargazer(rlm.same,rlm.same_indiv,align=TRUE,type="text")
+```
+
+
+
+#Interactions - Same Format/Origin with covariates
+**No statistical significance for treatment**
+```{r}
+#models
+rlm.same<-rlm(Guess_the_Cost ~ same_format_origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency ,d)
+#summary(lm.same)
+
+rlm.same_indiv<-rlm(Guess_the_Cost ~ French_format_wine + English_format_wine + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
+
+stargazer(rlm.same,rlm.same_indiv,align=TRUE,type="text")
+```
+
+
+#Fully Saturated
+**No statistical significance for treatment**
+```{r}
+rlm.fully_sat<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description + US_Origin * Long_Description + French_Purchasing_Page * US_Origin * Long_Description + German_Purchasing_Page* US_Origin * Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
+
+stargazer(rlm.fully_sat, align=TRUE,type="text", title = "RLM regression- with interactions")
+```
 
