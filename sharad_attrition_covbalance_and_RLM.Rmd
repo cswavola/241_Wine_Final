@@ -69,8 +69,12 @@ lm_attrit_format = lm(Finished~French_Purchasing_Page + German_Purchasing_Page, 
 lm_attrit_origin = lm(Finished~ US_Origin, d)
 lm_attrit_descrip = lm(Finished~Long_Description, d)
 
+## Logistic regression
+LR_format <- glm (Finished ~ French_Purchasing_Page + German_Purchasing_Page, data=d, family = binomial)
+LR_origin <- glm (Finished ~ US_Origin , data=d, family = binomial)
+LR_descrip <- glm (Finished ~ Long_Description, data=d, family = binomial)
 
-stargazer(lm_attrit_format,lm_attrit_origin,lm_attrit_descrip, title="Attrition Regressions", align=TRUE, type="text")
+stargazer(lm_attrit_format,lm_attrit_origin,lm_attrit_descrip,LR_format, LR_origin, LR_descrip, title="Attrition Regressions", align=TRUE, type="text")
 ```
 ##Covariate Balance Check
 
