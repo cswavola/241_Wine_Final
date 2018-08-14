@@ -198,6 +198,30 @@ for (i in (1:length(names(demographics)))){
 ```
 #Demographic/Covariate Balance Check
 
+```{r}
+#d$Cab_Preference = factor(d$Cab_Preference)
+#d$French_Purchasing_Page = factor(d$French_Purchasing_Page)
+d$French_Purchasing_Page = as.numeric(d$French_Purchasing_Page)
+d$German_Purchasing_Page = as.numeric(d$German_Purchasing_Page)
+d$US_Origin = as.numeric(d$US_Origin)
+French_cb = lm(French_Purchasing_Page ~ Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, data = d[d$German_Purchasing_Page != 1,])
+
+summary(French_cb)
+
+German_cb = lm(German_Purchasing_Page ~ Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, data = d[d$French_Purchasing_Page != 1,])
+
+summary(German_cb)
+
+French_German_cb = lm(French_Purchasing_Page ~ Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, data = d[d$French_Purchasing_Page == 1 | d$German_Purchasing_Page == 1 ,])
+
+summary(French_German_cb)
+
+Origin_cb = lm(US_Origin ~ Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, data = d)
+
+summary(Origin_cb)
+
+
+```
 
 ##Now looking at Outcome Variables
 ```{r}
