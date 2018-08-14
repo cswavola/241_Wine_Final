@@ -70,8 +70,38 @@ summary(lm.basic)
 ```{r}
 DT<-data.table(d)
 lm.basic<-lm(Guess_the_Cost~US_Origin,DT)
+summary(lm.basic)
 ```
+```{r}
+DT<-data.table(d)
+lm.des<-lm(Guess_the_Cost~Long_Description,DT)
+summary(lm.des)
+```
+
 ###Maybe try RLM here- need to be able to explain it
+
+```{r}
+DT_rlm<-data.table(d)
+
+DT_rlm$French_Purchasing_Page<-factor(DT_rlm$French_Purchasing_Page)
+DT_rlm$German_Purchasing_Page<-factor(DT_rlm$German_Purchasing_Page)
+DT_rlm$US_Origin <- factor(DT_rlm$US_Origin)
+DT_rlm$Long_Description <- factor(DT_rlm$Long_Description)
+
+rlm.format<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page,DT_rlm)
+
+rlm.origin<-rlm(Guess_the_Cost~US_Origin,DT_rlm)
+
+rlm.description<-rlm(Guess_the_Cost~Long_Description,DT_rlm)
+
+rlm.combined<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description,DT_rlm)
+
+
+stargazer(rlm.combined,rlm.format,rlm.origin,rlm.description,main="RLM Basic regressions- no covariates", align=TRUE, type="text")
+
+
+
+```
 
 #Ok, let's try the other output variables
 ```{r}
@@ -112,6 +142,7 @@ d$Cab_Preference<-d[,.(abs(d$Cab_Preference-2))]
 
 #Purchase Frequency- also not linear
 d$Purchase_Frequency<-factor(d$Purchase_Frequency)
+
 ```
 
 ```{r}
@@ -129,11 +160,67 @@ lm.cv_description<-lm(Guess_the_Cost~Long_Description + Male + Household_Income 
 
 stargazer(lm.basic,lm.cv_format,lm.cv_origin,lm.cv_description, title= "Basic Regressions",type="text", align=TRUE)
 ```
+
+
+
+```{r}
+DT_rlm<-data.table(d)
+
+DT_rlm$French_Purchasing_Page<-factor(DT_rlm$French_Purchasing_Page)
+DT_rlm$German_Purchasing_Page<-factor(DT_rlm$German_Purchasing_Page)
+DT_rlm$US_Origin <- factor(DT_rlm$US_Origin)
+DT_rlm$Long_Description <- factor(DT_rlm$Long_Description)
+DT_rlm$Male = as.character(DT_rlm$Male)
+DT_rlm$Household_Income = as.character(DT_rlm$Household_Income)
+DT_rlm$Cab_Preference = as.character(DT_rlm$Cab_Preference)
+DT_rlm$English_as_primary = as.character(DT_rlm$English_as_primary)
+DT_rlm$Drink_Frequency = as.character(DT_rlm$Drink_Frequency)
+DT_rlm$Purchase_Frequency = as.character(DT_rlm$Purchase_Frequency)
+
+
+rlm.format<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, DT_rlm)
+
+
+rlm.origin<-rlm(Guess_the_Cost~US_Origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT_rlm)
+
+rlm.description<-rlm(Guess_the_Cost~Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, DT_rlm)
+
+
+
+stargazer(rlm.format,rlm.origin,rlm.description,main="RLM Basic regressions with covariates", align=TRUE, type="text")
+
+
+
+```
+
+
+
+
 ##Saturated model
 ```{r}
 d$Track<-factor(d$Track)
 lm.saturated<-lm(Guess_the_Cost~ Track + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
 summary(lm.saturated)
+```
+```{r}
+DT_rlm$Track = factor(d$Track)
+
+DT_rlm$French_Purchasing_Page<-factor(DT_rlm$French_Purchasing_Page)
+DT_rlm$German_Purchasing_Page<-factor(DT_rlm$German_Purchasing_Page)
+DT_rlm$US_Origin <- factor(DT_rlm$US_Origin)
+DT_rlm$Long_Description <- factor(DT_rlm$Long_Description)
+DT_rlm$Male = as.character(DT_rlm$Male)
+DT_rlm$Household_Income = as.character(DT_rlm$Household_Income)
+DT_rlm$Cab_Preference = as.character(DT_rlm$Cab_Preference)
+DT_rlm$English_as_primary = as.character(DT_rlm$English_as_primary)
+DT_rlm$Drink_Frequency = as.character(DT_rlm$Drink_Frequency)
+DT_rlm$Purchase_Frequency = as.character(DT_rlm$Purchase_Frequency)
+
+
+rlm.saturated<-rlm(Guess_the_Cost~ Track + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, DT_rlm)
+
+summary(rlm.saturated)
+
 ```
 
 
@@ -159,6 +246,30 @@ lm.same<-lm(Guess_the_Cost ~  same_format_origin + Male + Household_Income + Eng
 #summary(lm.same)
 lm.same_indiv<-lm(d$Guess_the_Cost ~ French_format_wine + English_format_wine + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
 stargazer(lm.same,lm.same_indiv,align=TRUE,type="text")
+```
+
+```{r}
+DT_rlm = data.table(d)
+
+DT_rlm$French_Purchasing_Page<-factor(DT_rlm$French_Purchasing_Page)
+DT_rlm$German_Purchasing_Page<-factor(DT_rlm$German_Purchasing_Page)
+DT_rlm$US_Origin <- factor(DT_rlm$US_Origin)
+DT_rlm$Long_Description <- factor(DT_rlm$Long_Description)
+DT_rlm$Male = as.character(DT_rlm$Male)
+DT_rlm$Household_Income = as.character(DT_rlm$Household_Income)
+DT_rlm$Cab_Preference = as.character(DT_rlm$Cab_Preference)
+DT_rlm$English_as_primary = as.character(DT_rlm$English_as_primary)
+DT_rlm$Drink_Frequency = as.character(DT_rlm$Drink_Frequency)
+DT_rlm$Purchase_Frequency = as.character(DT_rlm$Purchase_Frequency)
+
+
+rlm.same<-rlm(Guess_the_Cost ~  same_format_origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, DT_rlm)
+
+rlm.same_indiv<-rlm(d$Guess_the_Cost ~ French_format_wine + English_format_wine + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, DT_rlm)
+
+stargazer(rlm.same,rlm.same_indiv,align=TRUE,type="text")
+
+
 ```
 
 
@@ -344,6 +455,29 @@ stargazer(lm.combined,lm.format,lm.origin,lm.description,main="Basic regressions
 ```
 ###Maybe try RLM here- need to be able to explain it
 
+```{r}
+DT_rlm<-DT
+
+DT_rlm$French_Purchasing_Page<-factor(DT_rlm$French_Purchasing_Page)
+DT_rlm$German_Purchasing_Page<-factor(DT_rlm$German_Purchasing_Page)
+DT_rlm$US_Origin <- factor(DT_rlm$US_Origin)
+DT_rlm$Long_Description <- factor(DT_rlm$Long_Description)
+
+rlm.format<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page,DT_rlm)
+
+rlm.origin<-rlm(Guess_the_Cost~US_Origin,DT_rlm)
+
+rlm.description<-rlm(Guess_the_Cost~Long_Description,DT_rlm)
+
+rlm.combined<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description,DT_rlm)
+
+
+stargazer(rlm.combined,rlm.format,rlm.origin,rlm.description,main="RLM Basic regressions- no covariates", align=TRUE, type="text")
+
+
+
+```
+
 #Ok, let's try the other output variables
 ```{r}
 #Change GG questions to "Max purchase" integer column
@@ -390,11 +524,28 @@ d$Purchase_Frequency<-factor(d$Purchase_Frequency)
 lm.cv<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary  + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT)
 stargazer(lm.basic,lm.cv,align=TRUE,type="text")
 ```
+
+```{r}
+rlm.cv<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary  + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT_rlm)
+
+rlm.cv2 <- rlm(Guess_the_Cost~ US_Origin + Male + Household_Income + English_as_primary  + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT_rlm)
+
+rlm.cv3 <- rlm(Guess_the_Cost~ Long_Description + Male + Household_Income + English_as_primary  + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT_rlm)
+stargazer(rlm.cv,rlm.cv2, rlm.cv3, align=TRUE,type="text")
+```
+
+
 #Saturated model
 ```{r}
 DT$Track<-factor(DT$Track)
 lm.saturated<-lm(Guess_the_Cost~ Track + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT)
 summary(lm.saturated)
+```
+
+```{r}
+DT_rlm$Track<-factor(DT_rlm$Track)
+rlm.saturated<-rlm(Guess_the_Cost~ Track + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT_rlm)
+summary(rlm.saturated)
 ```
 
 
@@ -579,6 +730,23 @@ lm.basic<-lm(Guess_the_Cost~US_Origin,DT)
 summary(lm.basic)
 ```
 ###Maybe try RLM here- need to be able to explain it
+```{r}
+DT_rlm = data.table(d)
+
+DT_rlm$French_Purchasing_Page<-factor(DT_rlm$French_Purchasing_Page)
+DT_rlm$German_Purchasing_Page<-factor(DT_rlm$German_Purchasing_Page)
+DT_rlm$US_Origin <- factor(DT_rlm$US_Origin)
+DT_rlm$Long_Description <- factor(DT_rlm$Long_Description)
+
+
+rlm.cv<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page,DT_rlm)
+
+rlm.cv2 <- rlm(Guess_the_Cost~ US_Origin,DT_rlm)
+
+rlm.cv3 <- rlm(Guess_the_Cost~ Long_Description, DT_rlm)
+stargazer(rlm.cv,rlm.cv2, rlm.cv3, align=TRUE,type="text")
+```
+
 
 #Ok, let's try the other output variables
 ```{r}
@@ -636,6 +804,35 @@ lm.cv_description<-lm(Guess_the_Cost~Long_Description + Male + Household_Income 
 
 stargazer(lm.basic,lm.cv_format,lm.cv_origin,lm.cv_description, title= "Basic Regressions",type="text", align=TRUE)
 ```
+
+```{r}
+DT_rlm = data.table(d)
+
+DT_rlm$French_Purchasing_Page<-factor(DT_rlm$French_Purchasing_Page)
+DT_rlm$German_Purchasing_Page<-factor(DT_rlm$German_Purchasing_Page)
+DT_rlm$US_Origin <- factor(DT_rlm$US_Origin)
+DT_rlm$Long_Description <- factor(DT_rlm$Long_Description)
+DT_rlm$Male = as.character(DT_rlm$Male)
+DT_rlm$Household_Income = as.character(DT_rlm$Household_Income)
+DT_rlm$Cab_Preference = as.character(DT_rlm$Cab_Preference)
+DT_rlm$English_as_primary = as.character(DT_rlm$English_as_primary)
+DT_rlm$Drink_Frequency = as.character(DT_rlm$Drink_Frequency)
+DT_rlm$Purchase_Frequency = as.character(DT_rlm$Purchase_Frequency)
+
+rlm.cv_format<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency ,DT_rlm)
+#stargazer(lm.basic,lm.cv, title= "Basic Regressions",type="latex")
+
+#covariates, treatment origin
+rlm.cv_origin<-rlm(Guess_the_Cost~US_Origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency ,DT_rlm)
+#summary(lm.cv_origin)
+
+#covariates, treatment description
+rlm.cv_description<-rlm(Guess_the_Cost~Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency ,DT_rlm)
+#summary(lm.cv_description)
+
+stargazer(rlm.cv_format,rlm.cv_origin,rlm.cv_description, title= "Basic Regressions",type="text", align=TRUE)
+```
+
 ##Saturated model
 ```{r}
 d$Track<-factor(d$Track)
@@ -644,6 +841,14 @@ summary(lm.saturated)
 ```
 
 
+
+
+
+```{r}
+DT_rlm$Track<-factor(DT_rlm$Track)
+rlm.saturated<-rlm(Guess_the_Cost~ Track + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT_rlm)
+summary(rlm.saturated)
+```
 
 
 
@@ -668,7 +873,29 @@ lm.same_indiv<-lm(d$Guess_the_Cost ~ French_format_wine + English_format_wine + 
 stargazer(lm.same,lm.same_indiv,align=TRUE,type="text")
 ```
 
+```{r}
+#same origin/format binary
+DT_rlm<-data.table(d)
 
+
+DT_rlm$French_Purchasing_Page<-factor(DT_rlm$French_Purchasing_Page)
+DT_rlm$German_Purchasing_Page<-factor(DT_rlm$German_Purchasing_Page)
+DT_rlm$US_Origin <- factor(DT_rlm$US_Origin)
+DT_rlm$Long_Description <- factor(DT_rlm$Long_Description)
+DT_rlm$Male = as.character(DT_rlm$Male)
+DT_rlm$Household_Income = as.character(DT_rlm$Household_Income)
+DT_rlm$Cab_Preference = as.character(DT_rlm$Cab_Preference)
+DT_rlm$English_as_primary = as.character(DT_rlm$English_as_primary)
+DT_rlm$Drink_Frequency = as.character(DT_rlm$Drink_Frequency)
+DT_rlm$Purchase_Frequency = as.character(DT_rlm$Purchase_Frequency)
+
+#models
+rlm.same<-rlm(Guess_the_Cost ~ same_format_origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency ,DT_rlm)
+#summary(lm.same)
+
+rlm.same_indiv<-rlm(Guess_the_Cost ~ French_format_wine + English_format_wine + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT_rlm)
+stargazer(rlm.same,rlm.same_indiv,align=TRUE,type="text")
+```
 
 #RI with limit on guesses
 ```{r}
@@ -865,6 +1092,9 @@ lm.combined<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page +
 stargazer(lm.combined,lm.format,lm.origin,lm.description,main="Basic regressions- no covariates", align=TRUE, type="text")
 
 ```
+
+
+
 ###Maybe try RLM here- need to be able to explain it
 ```{r}
 #opar <- par(mfrow = c(2,2), oma = c(0, 0, 1.1, 0))
@@ -910,6 +1140,13 @@ d$Purchase_Frequency<-factor(d$Purchase_Frequency)
 lm.cv<-lm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary  + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT)
 stargazer(lm.basic,lm.cv,align=TRUE,type="text")
 ```
+
+
+
+
+
+
+
 #Saturated model
 ```{r}
 DT$Track<-factor(DT$Track)
