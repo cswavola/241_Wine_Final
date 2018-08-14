@@ -86,6 +86,8 @@ LR_descrip <- glm (Finished ~ Long_Description, data=d, family = binomial)
 
 stargazer(lm_attrit_format,lm_attrit_origin,lm_attrit_descrip,LR_format, LR_origin, LR_descrip, title="Attrition Regressions", align=TRUE, type="text")
 ```
+
+
 ##Covariate Balance Check
 
 **The p-value on the Fstats are insignificant for all covariate balance regression tests, meaning we cannot reject the null hypothesis that all coefficients are equal to 0**
