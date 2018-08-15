@@ -13,6 +13,7 @@ library(MASS)
 library(stargazer)
 library(sandwich)
 library(lmtest)
+library(nnet)
 
 d = read.csv('1st_Launch_Full.csv')
 ```
@@ -175,6 +176,16 @@ rlm.saturated<-rlm(Guess_the_Cost~ Track + Male + Household_Income + English_as_
 stargazer(rlm.saturated, align=TRUE,type="text", title = "RLM regressions- saturated")
 ```
 
+#Track with no covariates
+**TrackFrench_English_long  significant at 10% level**
+```{r}
+
+rlm.saturated<-rlm(Guess_the_Cost~ Track,d)
+
+stargazer(rlm.saturated, align=TRUE,type="text", title = "RLM regressions- track with no covariates")
+```
+
+
 #Full Interactions without covariates
 
 **Statistical Significance at the 10% level for Long Description**
@@ -188,8 +199,8 @@ stargazer(rlm.interactions, align=TRUE,type="text", title = "RLM regression- wit
 
 #Interaction Pairs without covariates
 
-#Statistical Significance at the 5% level for Long Description (regression without language format)
-#Statistical Significance at the 10% level for interaction term Long Description with US Origin (regression without language format)
+**Statistical Significance at the 5% level for Long Description (regression without language format)**
+**Statistical Significance at the 10% level for interaction term Long Description with US Origin (regression without language format)**
 ```{r}
 rlm.i1<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin,d)
 
@@ -202,8 +213,8 @@ stargazer(rlm.i1, rlm.i2, rlm.i3, align=TRUE,type="text", title = "RLM regressio
 
 ##Interaction Pairs with covariates
 
-#Statistical Significance at the 10% level for Long Description (regression without language format)
-#Statistical Significance at the 10% level for interaction term Long Description with US Origin (regression without language format)
+**Statistical Significance at the 10% level for Long Description (regression without language format)**
+**Statistical Significance at the 10% level for interaction term Long Description with US Origin (regression without language format)**
 
 ```{r}
 rlm.i1<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
@@ -250,3 +261,344 @@ rlm.fully_sat<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Pa
 stargazer(rlm.fully_sat, align=TRUE,type="text", title = "RLM regression- with interactions")
 ```
 
+###PURCHASE LIKELIHOOD - MULTINOMIAL LOGISTIC REGRESSION
+
+**Using multinomial instead of ordinal due to the proportional odds assumption: The proportional odds assumption means that for each term included in the model, the 'slope' estimate between each pair of outcomes across two response levels are assumed to be the same regardless of which partition we consider**
+
+```{r}
+d$max_purchase[!is.na(d$Purchase_50)] = "$0"
+d[Purchase_50==1,max_purchase:="$50"]
+d[Purchase_35==1 & Purchase_50 == 0,max_purchase:="$35"]
+d[Purchase_20==1 & Purchase_50 == 0 & Purchase_35 == 0,max_purchase:="$20"]
+d$max_purchase = as.factor(d$max_purchase)
+d$max = relevel(d$max_purchase, ref = "$0") 
+
+
+p_val = function(regr){
+z <- summary(regr)$coefficients/summary(regr)$standard.errors
+return((1 - pnorm(abs(z), 0, 1)) * 2)
+}
+
+risk_ratio = function(regr){
+z <- summary(regr)$coefficients/summary(regr)$standard.errors
+exp(coef(regr))
+}
+
+```
+
+
+```{r}
+test = multinom(max~ French_Purchasing_Page + German_Purchasing_Page, data = d)
+stargazer(test, type = 'text', coef = list(risk_ratio(test)), p.auto = FALSE)
+```
+
+##Trying binary logit models instead
+
+```{r}
+#Odds Ratio
+OR = function(regr){
+  return(exp(coef(regr)))
+}
+```
+
+##Log Regression Page Format - No covariates
+**No statistical significnace**
+```{r}
+glm.format_50<-glm(Purchase_50~French_Purchasing_Page + German_Purchasing_Page,family = binomial, d)
+glm.format_35<-glm(Purchase_35~French_Purchasing_Page + German_Purchasing_Page,family = binomial, d)
+glm.format_20<-glm(Purchase_20~French_Purchasing_Page + German_Purchasing_Page, family = binomial,d)
+
+
+#rlm.origin<-rlm(Guess_the_Cost~US_Origin,d)
+#rlm.description<-rlm(Guess_the_Cost~Long_Description,d)
+#rlm.combined<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description,d)
+
+stargazer(glm.format_50,glm.format_35,glm.format_20, coef = list(OR(glm.format_50), OR(glm.format_35), OR(glm.format_20)), p.auto = FALSE, title="Log Regression Page Format- Risk Ratios with no covariates", align=TRUE, type="text")
+```
+
+##Log Regression Origin - No Covariates
+**No statistical significance**
+```{r}
+glm.origin_50<-glm(Purchase_50~ US_Origin,family = binomial, d)
+glm.origin_35<-glm(Purchase_35~ US_Origin,family = binomial, d)
+glm.origin_20<-glm(Purchase_20~ US_Origin, family = binomial,d)
+
+
+#rlm.origin<-rlm(Guess_the_Cost~US_Origin,d)
+#rlm.description<-rlm(Guess_the_Cost~Long_Description,d)
+#rlm.combined<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description,d)
+
+stargazer(glm.origin_50,glm.origin_35,glm.origin_20, coef = list(OR(glm.origin_50), OR(glm.origin_35), OR(glm.origin_20)), p.auto = FALSE, title="Log Regression Wine Origin- Risk Ratios with no covariates", align=TRUE, type="text")
+```
+
+##Log Regression Description - No covariates
+**No statistical significance**
+```{r}
+glm.desc_50<-glm(Purchase_50~ Long_Description, family = binomial, d)
+glm.desc_35<-glm(Purchase_35~ Long_Description, family = binomial, d)
+glm.desc_20<-glm(Purchase_20~ Long_Description, family = binomial,d)
+
+
+#rlm.origin<-rlm(Guess_the_Cost~US_Origin,d)
+#rlm.description<-rlm(Guess_the_Cost~Long_Description,d)
+#rlm.combined<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description,d)
+
+stargazer(glm.desc_50,glm.desc_35,glm.desc_20, coef = list(OR(glm.desc_50), OR(glm.desc_35), OR(glm.desc_20)), p.auto = FALSE, title="Log Regression Wine Description- Risk Ratios with no covariates", align=TRUE, type="text")
+```
+
+##Log Regression Page Format - with covariates
+**No statistical significnace in treatment**
+
+```{r}
+glm.format_50<-glm(Purchase_50~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial, d)
+glm.format_35<-glm(Purchase_35~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial, d)
+glm.format_20<-glm(Purchase_20~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, family = binomial,d)
+
+
+#rlm.origin<-rlm(Guess_the_Cost~US_Origin,d)
+#rlm.description<-rlm(Guess_the_Cost~Long_Description,d)
+#rlm.combined<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description,d)
+
+stargazer(glm.format_50,glm.format_35,glm.format_20, coef = list(OR(glm.format_50), OR(glm.format_35), OR(glm.format_20)), p.auto = FALSE, title="Log Regression Page Format- Risk Ratios with covariates", align=TRUE, type="text")
+```
+
+##Log Regression Origin - with Covariates
+**No statistical significance in treatment**
+```{r}
+glm.origin_50<-glm(Purchase_50~ US_Origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial, d)
+glm.origin_35<-glm(Purchase_35~ US_Origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial, d)
+glm.origin_20<-glm(Purchase_20~ US_Origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, family = binomial,d)
+
+
+
+
+stargazer(glm.origin_50,glm.origin_35,glm.origin_20, coef = list(OR(glm.origin_50), OR(glm.origin_35), OR(glm.origin_20)), p.auto = FALSE, title="Log Regression Wine Origin- Risk Ratios with covariates", align=TRUE, type="text")
+```
+
+
+##Log Regression Description - with covariates
+**No statistical significance**
+```{r}
+glm.desc_50<-glm(Purchase_50~ Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, family = binomial, d)
+glm.desc_35<-glm(Purchase_35~ Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, family = binomial, d)
+glm.desc_20<-glm(Purchase_20~ Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, family = binomial,d)
+
+
+#rlm.origin<-rlm(Guess_the_Cost~US_Origin,d)
+#rlm.description<-rlm(Guess_the_Cost~Long_Description,d)
+#rlm.combined<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description,d)
+
+stargazer(glm.desc_50,glm.desc_35,glm.desc_20, coef = list(OR(glm.desc_50), OR(glm.desc_35), OR(glm.desc_20)), p.auto = FALSE, title="Log Regression Wine Description- Risk Ratios with covariates", align=TRUE, type="text")
+```
+
+#Combination Treatment - no covariates
+**No statistical significance**
+
+```{r}
+glm.comb_50<-glm(Purchase_50~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + US_Origin,family = binomial, d)
+glm.comb_35<-glm(Purchase_35~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + US_Origin,family = binomial, d)
+glm.comb_20<-glm(Purchase_20~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + US_Origin,family = binomial, d)
+
+#rlm.origin<-rlm(Guess_the_Cost~US_Origin,d)
+#rlm.description<-rlm(Guess_the_Cost~Long_Description,d)
+#rlm.combined<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description,d)
+
+stargazer(glm.comb_50,glm.comb_35,glm.comb_20, coef = list(OR(glm.comb_50), OR(glm.comb_35), OR(glm.comb_20)), p.auto = FALSE, title="Log Regression Combined Treatments- Risk Ratios with no covariates", align=TRUE, type="text")
+
+```
+
+#Combination Treatment - with covariates
+**No statistical significance**
+```{r}
+glm.comb_50<-glm(Purchase_50~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + US_Origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial, d)
+glm.comb_35<-glm(Purchase_35~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + US_Origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial, d)
+glm.comb_20<-glm(Purchase_20~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + US_Origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial, d)
+
+#rlm.origin<-rlm(Guess_the_Cost~US_Origin,d)
+#rlm.description<-rlm(Guess_the_Cost~Long_Description,d)
+#rlm.combined<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description,d)
+
+stargazer(glm.comb_50,glm.comb_35,glm.comb_20, coef = list(OR(glm.comb_50), OR(glm.comb_35), OR(glm.comb_20)), p.auto = FALSE, title="Log Regression Combined Treatments- Risk Ratios with covariates", align=TRUE, type="text")
+
+```
+
+#Saturated
+**No statistical significance for treatments**
+```{r}
+
+glm.sat_50<-glm(Purchase_50~ Track + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial, d)
+glm.sat_35<-glm(Purchase_35~ Track + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial, d)
+glm.sat_20<-glm(Purchase_20~ Track + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial, d)
+
+#rlm.origin<-rlm(Guess_the_Cost~US_Origin,d)
+#rlm.description<-rlm(Guess_the_Cost~Long_Description,d)
+#rlm.combined<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description,d)
+
+stargazer(glm.sat_50,glm.sat_35,glm.sat_20, coef = list(OR(glm.sat_50), OR(glm.sat_35), OR(glm.sat_20)), p.auto = FALSE, title="Log Regression Saturated- Risk Ratios with  covariates", align=TRUE, type="text")
+
+```
+
+
+#Track with no covariates 
+
+**TrackEnglish_German_short significant at the 10% level**
+```{r}
+
+glm.sat_50<-glm(Purchase_50~ Track,family = binomial, d)
+glm.sat_35<-glm(Purchase_35~ Track,family = binomial, d)
+glm.sat_20<-glm(Purchase_20~ Track,family = binomial, d)
+
+#rlm.origin<-rlm(Guess_the_Cost~US_Origin,d)
+#rlm.description<-rlm(Guess_the_Cost~Long_Description,d)
+#rlm.combined<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description,d)
+
+stargazer(glm.sat_50,glm.sat_35,glm.sat_20, coef = list(OR(glm.sat_50), OR(glm.sat_35), OR(glm.sat_20)), p.auto = FALSE, title="Log Regression Saturated- Risk Ratios with no covariates", align=TRUE, type="text")
+
+```
+
+#Full Interactions without covariates
+
+**German_Purchasing_Page1:US_Origin1 significant at 5% level for $50 purchases**
+**German_Purchasing_Page1:Long_Description1 significant at 10% level for $35 purchases**
+**German_Purchasing_Page1:US_Origin1:Long_Description1 significant at 10% level for $50 purchases**
+**German_Purchasing_Page1:US_Origin1:Long_Description1 significant at 10% level for $35 purchases**
+**Long_Description1 significant at 10% level for $35 purchases**
+```{r}
+glm.interactions_50<-glm(Purchase_50~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description + US_Origin * Long_Description + French_Purchasing_Page * US_Origin * Long_Description + German_Purchasing_Page* US_Origin * Long_Description, family = binomial, d)
+
+glm.interactions_35<-glm(Purchase_35~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description + US_Origin * Long_Description + French_Purchasing_Page * US_Origin * Long_Description + German_Purchasing_Page* US_Origin * Long_Description, family = binomial, d)
+
+glm.interactions_20<-glm(Purchase_20~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description + US_Origin * Long_Description + French_Purchasing_Page * US_Origin * Long_Description + German_Purchasing_Page* US_Origin * Long_Description, family = binomial, d)
+
+stargazer(glm.interactions_50,glm.interactions_35,glm.interactions_20, coef = list(OR(glm.interactions_50), OR(glm.interactions_35), OR(glm.interactions_20)), p.auto = FALSE, title="Log Regression Full Interactions- Risk Ratios with no covariates", align=TRUE, type="text")
+```
+
+#Fully Saturated
+
+**German_Purchasing_Page1:US_Origin1 significant at 10% level for $50 purchases**
+**German_Purchasing_Page1:Long_Description1 significant at 5% level for $35 purchases**
+**German_Purchasing_Page1:US_Origin1:Long_Description1 significant at 10% level for $50 purchases**
+**German_Purchasing_Page1:US_Origin1:Long_Description1 significant at 5% level for $35 purchases**
+**German_Purchasing_Page1 significant at 10% level for $35 purchases**
+```{r}
+glm.interactions_50<-glm(Purchase_50~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description + US_Origin * Long_Description + French_Purchasing_Page * US_Origin * Long_Description + German_Purchasing_Page* US_Origin * Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, family = binomial, d)
+
+glm.interactions_35<-glm(Purchase_35~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description + US_Origin * Long_Description + French_Purchasing_Page * US_Origin * Long_Description + German_Purchasing_Page* US_Origin * Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, family = binomial, d)
+
+glm.interactions_20<-glm(Purchase_20~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description + US_Origin * Long_Description + French_Purchasing_Page * US_Origin * Long_Description + German_Purchasing_Page* US_Origin * Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, family = binomial, d)
+
+stargazer(glm.interactions_50,glm.interactions_35,glm.interactions_20, coef = list(OR(glm.interactions_50), OR(glm.interactions_35), OR(glm.interactions_20)), p.auto = FALSE, title="Log Regression Full Interactions- Risk Ratios with covariates", align=TRUE, type="text")
+```
+
+#Interaction Pairs without covariates
+
+##Interaction Origin w Purchasing Page
+**No statistically significant findings**
+
+## Interaction Description with Purchasing Page
+**Long_Description1 significant at 10% level for $35 purchases**
+
+## Interaction Description with Origin
+**No statistically significant findings**
+
+
+```{r}
+glm.i1<-glm(Purchase_50~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin,family = binomial ,d)
+glm.i2<-glm(Purchase_35~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin, family = binomial, d)
+glm.i3<-glm(Purchase_20~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin, family = binomial ,d)
+
+glm.i4<-glm(Purchase_50~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description,family = binomial ,d)
+glm.i5<-glm(Purchase_35~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description, family = binomial, d)
+glm.i6<-glm(Purchase_20~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description, family = binomial ,d)
+
+glm.i7<-glm(Purchase_50~ US_Origin + Long_Description + US_Origin * Long_Description,family = binomial ,d)
+glm.i8<-glm(Purchase_35~ US_Origin + Long_Description + US_Origin * Long_Description,family = binomial ,d)
+glm.i9<-glm(Purchase_20~ US_Origin + Long_Description + US_Origin * Long_Description,family = binomial ,d)
+
+
+stargazer(glm.i1,glm.i2,glm.i3, coef = list(OR(glm.i1), OR(glm.i2), OR(glm.i3)), p.auto = FALSE, title="Log Regression Interaction Origin w Purchasing Page- Risk Ratios without covariates", align=TRUE, type="text")
+
+stargazer(glm.i4,glm.i5,glm.i6, coef = list(OR(glm.i4), OR(glm.i5), OR(glm.i6)), p.auto = FALSE, title="Log Regression Interaction Description w Purchasing Page- Risk Ratios without covariates", align=TRUE, type="text")
+
+stargazer(glm.i7,glm.i8,glm.i9, coef = list(OR(glm.i7), OR(glm.i8), OR(glm.i9)), p.auto = FALSE, title="Log Regression Interaction Description w Origin- Risk Ratios without covariates", align=TRUE, type="text")
+
+```
+
+#Interaction Pairs with covariates
+
+##Interaction Origin w Purchasing Page
+**French_Purchasing_Page1:US_Origin1 significant at 10% level for $20**
+**French_Purchasing_Page1 significant at 5% level for $20**
+
+## Interaction Description with Purchasing Page
+**No statistically significant findings**
+
+## Interaction Description with Origin
+**No statistically significant findings**
+
+
+```{r}
+glm.i1<-glm(Purchase_50~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial ,d)
+glm.i2<-glm(Purchase_35~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, family = binomial, d)
+glm.i3<-glm(Purchase_20~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, family = binomial ,d)
+
+glm.i4<-glm(Purchase_50~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial ,d)
+glm.i5<-glm(Purchase_35~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, family = binomial, d)
+glm.i6<-glm(Purchase_20~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, family = binomial ,d)
+
+glm.i7<-glm(Purchase_50~ US_Origin + Long_Description + US_Origin * Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial ,d)
+glm.i8<-glm(Purchase_35~ US_Origin + Long_Description + US_Origin * Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial ,d)
+glm.i9<-glm(Purchase_20~ US_Origin + Long_Description + US_Origin * Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial ,d)
+
+
+stargazer(glm.i1,glm.i2,glm.i3, coef = list(OR(glm.i1), OR(glm.i2), OR(glm.i3)), p.auto = FALSE, title="Log Regression Interaction Origin w Purchasing Page- Risk Ratios with covariates", align=TRUE, type="text")
+
+stargazer(glm.i4,glm.i5,glm.i6, coef = list(OR(glm.i4), OR(glm.i5), OR(glm.i6)), p.auto = FALSE, title="Log Regression Interaction Description w Purchasing Page- Risk Ratios with covariates", align=TRUE, type="text")
+
+stargazer(glm.i7,glm.i8,glm.i9, coef = list(OR(glm.i7), OR(glm.i8), OR(glm.i9)), p.auto = FALSE, title="Log Regression Interaction Description w Origin- Risk Ratios with covariates", align=TRUE, type="text")
+
+```
+
+#Interactions - Same Format/Origin without covariates
+**No statistical significance for treatment**
+```{r}
+#models
+glm.same_50<-glm(Purchase_50~ same_format_origin,family = binomial, d)
+glm.same_35<-glm(Purchase_35~ same_format_origin,family = binomial, d)
+glm.same_20<-glm(Purchase_20~ same_format_origin,family = binomial, d)
+
+glm.same_indiv_50<-glm(Purchase_50~ French_format_wine + English_format_wine,family = binomial, d)
+glm.same_indiv_35<-glm(Purchase_35~ French_format_wine + English_format_wine,family = binomial, d)
+glm.same_indiv_20<-glm(Purchase_20~ French_format_wine + English_format_wine,family = binomial, d)
+
+
+stargazer(glm.same_50,glm.same_35,glm.same_20, coef = list(OR(glm.same_50), OR(glm.same_35), OR(glm.same_20)), p.auto = FALSE, title="Log Regression SameFormat/Origin- Risk Ratios with no covariates", align=TRUE, type="text")
+
+stargazer(glm.same_indiv_50,glm.same_indiv_35,glm.same_indiv_20, coef = list(OR(glm.same_indiv_50), OR(glm.same_indiv_35), OR(glm.same_indiv_20)), p.auto = FALSE, title="Log Regression SameFormat/Origin Individual- Risk Ratios with no covariates", align=TRUE, type="text")
+
+
+
+```
+
+#Interactions - Same Format/Origin with covariates
+**same_format_origin significant at 10% level for $20 purchases**
+**French_format_wine significant at 5% level for $20 purchases**
+
+```{r}
+#models
+glm.same_50<-glm(Purchase_50~ same_format_origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial, d)
+glm.same_35<-glm(Purchase_35~ same_format_origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial, d)
+glm.same_20<-glm(Purchase_20~ same_format_origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial, d)
+
+glm.same_indiv_50<-glm(Purchase_50~ French_format_wine + English_format_wine + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial, d)
+glm.same_indiv_35<-glm(Purchase_35~ French_format_wine + English_format_wine + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial, d)
+glm.same_indiv_20<-glm(Purchase_20~ French_format_wine + English_format_wine + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial, d)
+
+
+stargazer(glm.same_50,glm.same_35,glm.same_20, coef = list(OR(glm.same_50), OR(glm.same_35), OR(glm.same_20)), p.auto = FALSE, title="Log Regression SameFormat/Origin- Risk Ratios with  covariates", align=TRUE, type="text")
+
+stargazer(glm.same_indiv_50,glm.same_indiv_35,glm.same_indiv_20, coef = list(OR(glm.same_indiv_50), OR(glm.same_indiv_35), OR(glm.same_indiv_20)), p.auto = FALSE, title="Log Regression SameFormat/Origin Individual- Risk Ratios with  covariates", align=TRUE, type="text")
+
+
+
+```
