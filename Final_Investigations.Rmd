@@ -963,6 +963,7 @@ return(ate_list)
 ```
 
 ```{r, include=FALSE}
+d<-complete_dedup
 
 #original, non-function RI
 #ate_obsv<-calculate_ate(RI_DT,RI_outcome,RI_feature)
@@ -992,6 +993,21 @@ RI_chartoutput<-function(DT=RI_DT, outcome=RI_outcome, RI_feature,feature_title)
 ```
 ##Basic RI for all treatments
 ```{r}
+#same origin/format binary
+d<-data.table(complete_dedup)
+d$same_format_origin<-rep(0,length(d$French_Purchasing_Page))
+d[French_Purchasing_Page==1 & US_Origin==0,same_format_origin :=1]
+d[German_Purchasing_Page==0 & French_Purchasing_Page==0 & US_Origin==1,same_format_origin :=1]
+#French layout+french wine
+d$French_format_wine<-rep(0,length(d$French_Purchasing_Page))
+d[French_Purchasing_Page==1 & US_Origin==0,"French_format_wine" :=1]
+#English layout + US wine
+d$English_format_wine<-rep(0,length(d$French_Purchasing_Page))
+d[German_Purchasing_Page==0 & French_Purchasing_Page==0 & US_Origin==1,"English_format_wine" :=1]
+
+DT<-data.table(d)
+DT_95<-DT[Guess_the_Cost < quantile(DT$Guess_the_Cost,.95)]
+boxplot(DT_95$Guess_the_Cost,horizontal = TRUE)
 #Formats
 par(mfrow=c(2,1))
 RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$French_Purchasing_Page,"French Purchasing Page")
@@ -1130,16 +1146,40 @@ d$Never_purchased<-rep(0,length(d$Purchase_Frequency))
 d[Purchase_Frequency==5,Never_purchased := 1]
 #need character format from sharad's code:
 
+HTE_test<-function(d,feature){
+  rlm.HTE_format<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page+ feature + French_Purchasing_Page*feature + German_Purchasing_Page * feature,d)
+rlm.HTE_origin<-rlm(Guess_the_Cost~  US_Origin +feature+ feature * US_Origin,d)
+rlm.HTE_description<-rlm(Guess_the_Cost~ Long_Description+feature + feature * Long_Description,d)
+
+return(stargazer(rlm.HTE_format,rlm.HTE_origin,rlm.HTE_description, align=TRUE,type="text", title = "RLM regression- HTE test"))
+}
+
+HTE_test(d,d$Never_purchased)
+#non-significant HTEs
+HTE_test(d,d$English_as_primary)
+HTE_test(d,d$Cab_Preference)
+HTE_test(d,d$Male)
+
 d$French_Purchasing_Page = as.numeric(as.character(d$French_Purchasing_Page))
 d$German_Purchasing_Page = as.numeric(as.character(d$German_Purchasing_Page))
 d$US_Origin = as.numeric(as.character(d$US_Origin))
 d$Long_Description = as.numeric(as.character(d$Long_Description))
+
 rlm.HTE_format<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page+Never_purchased + French_Purchasing_Page*Never_purchased + German_Purchasing_Page * Never_purchased,d)
+
 rlm.HTE_origin<-rlm(Guess_the_Cost~  US_Origin +Never_purchased+ Never_purchased * US_Origin,d)
 rlm.HTE_description<-rlm(Guess_the_Cost~ Long_Description+Never_purchased + Never_purchased * Long_Description,d)
 
 stargazer(rlm.HTE_format,rlm.HTE_origin,rlm.HTE_description, align=TRUE,type="text", title = "RLM regression- Interaction of Never-purchase-wine")
+
+lm.cv_HTE<-lm(French_Purchasing_Page~Never_purchased,d)
+summary(lm.cv_HTE)
+
 ```
+
+
+
+
 ```{r}
 rlm.HTE_format_EPL<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + English_as_primary+French_Purchasing_Page * English_as_primary + German_Purchasing_Page * English_as_primary,d)
 rlm.HTE_origin_EPL<-rlm(Guess_the_Cost~  US_Origin + English_as_primary + English_as_primary * US_Origin,d)
