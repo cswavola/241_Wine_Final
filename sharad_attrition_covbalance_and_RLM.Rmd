@@ -71,6 +71,10 @@ d[German_Purchasing_Page==0 & French_Purchasing_Page==0 & US_Origin==1,"English_
 
 #Attrition
 ```{r} 
+OR = function(regr){
+  return(exp(coef(regr)))
+}
+
 attrit = subset(d, Finished == 0)
 sum(attrit$French_Purchasing_Page == 1)
 sum(attrit$German_Purchasing_Page == 1)
@@ -85,7 +89,9 @@ LR_format <- glm (Finished ~ French_Purchasing_Page + German_Purchasing_Page, da
 LR_origin <- glm (Finished ~ US_Origin , data=d, family = binomial)
 LR_descrip <- glm (Finished ~ Long_Description, data=d, family = binomial)
 
-stargazer(lm_attrit_format,lm_attrit_origin,lm_attrit_descrip,LR_format, LR_origin, LR_descrip, title="Attrition Regressions", align=TRUE, type="text")
+stargazer(lm_attrit_format,lm_attrit_origin,lm_attrit_descrip, title="Attrition Regressions-OLS", align=TRUE, type="text")
+
+stargazer(LR_format, LR_origin, LR_descrip, coef = list(OR(LR_format), OR(LR_origin), OR(LR_descrip)), title="Attrition Regressions-Logistic with Odds Ratio", p.auto = FALSE, align=TRUE, type="text")
 ```
 
 
@@ -201,6 +207,8 @@ stargazer(rlm.interactions, align=TRUE,type="text", title = "RLM regression- wit
 
 **Statistical Significance at the 5% level for Long Description (regression without language format)**
 **Statistical Significance at the 10% level for interaction term Long Description with US Origin (regression without language format)**
+**Statistical Significance at the 10% level for German Purchasing Page (regression without origin)**
+
 ```{r}
 rlm.i1<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin,d)
 
