@@ -16,6 +16,20 @@ knitr::opts_knit$set(root.dir = normalizePath("./"))
 d = read.csv('1st_Launch_Full.csv')
 library(MASS)
 library(stargazer)
+library(MASS)
+library(stargazer)
+library(sandwich)
+library(lmtest)
+library(nnet)
+```
+
+```{r}
+barplot(prop.table(table(d$Track)), main="Distribution across Tracks, Normalized", names.arg = c(-1:12))
+boxplot(d$Guess_the_Cost,horizontal =TRUE)
+d$geo_code <- paste(d$LocationLatitude, d$LocationLongitude)
+dt<-data.table(d)
+dt[, `freq_geo` := .N, by = geo_code]
+dt[, `freq_ip` := .N, by = IPAddress]
 ```
 #2. Pre-clean General summaries- already in writeup
 ```{r}
@@ -1106,7 +1120,32 @@ plot(rr.huber)
 
 hweights <- data.frame(user = DT$MTurkCode, resid = rr.huber$resid, weight = rr.huber$w)
 hweights2 <- hweights[order(rr.huber$w), ]
-hweights2
+#hweights2
+```
+
+##RLM interaction- never purchase HTE
+```{r}
+d<-data.table(d)
+d$Never_purchased<-rep(0,length(d$Purchase_Frequency))
+d[Purchase_Frequency==5,Never_purchased := 1]
+#need character format from sharad's code:
+
+d$French_Purchasing_Page = as.numeric(as.character(d$French_Purchasing_Page))
+d$German_Purchasing_Page = as.numeric(as.character(d$German_Purchasing_Page))
+d$US_Origin = as.numeric(as.character(d$US_Origin))
+d$Long_Description = as.numeric(as.character(d$Long_Description))
+rlm.HTE_format<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page+Never_purchased + French_Purchasing_Page*Never_purchased + German_Purchasing_Page * Never_purchased,d)
+rlm.HTE_origin<-rlm(Guess_the_Cost~  US_Origin +Never_purchased+ Never_purchased * US_Origin,d)
+rlm.HTE_description<-rlm(Guess_the_Cost~ Long_Description+Never_purchased + Never_purchased * Long_Description,d)
+
+stargazer(rlm.HTE_format,rlm.HTE_origin,rlm.HTE_description, align=TRUE,type="text", title = "RLM regression- Interaction of Never-purchase-wine")
+```
+```{r}
+rlm.HTE_format_EPL<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + English_as_primary+French_Purchasing_Page * English_as_primary + German_Purchasing_Page * English_as_primary,d)
+rlm.HTE_origin_EPL<-rlm(Guess_the_Cost~  US_Origin + English_as_primary + English_as_primary * US_Origin,d)
+rlm.HTE_description_EPL<-rlm(Guess_the_Cost~ Long_Description + English_as_primary + English_as_primary * Long_Description,d)
+
+stargazer(rlm.HTE_format_EPL,rlm.HTE_origin_EPL,rlm.HTE_description_EPL, align=TRUE,type="text", title = "RLM regression- Interaction of Never-purchase-wine")
 ```
 
 ##Adding in Covariates
