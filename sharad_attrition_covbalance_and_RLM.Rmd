@@ -310,6 +310,18 @@ OR = function(regr){
   return(exp(coef(regr)))
 }
 ```
+```{r}
+#Char's R chunk- null and void
+glm.format_50<-glm(Purchase_50~French_Purchasing_Page + German_Purchasing_Page,family = binomial, d)
+glm.origin_50<-glm(Purchase_50~ US_Origin,family = binomial, d)
+glm.desc_50<-glm(Purchase_50~ Long_Description, family = binomial, d)
+glm.all_50<-glm(Purchase_50~ French_Purchasing_Page+German_Purchasing_Page+US_Origin+Long_Description, family = binomial, d)
+
+glm.format_50<-glm(Purchase_50~French_Purchasing_Page + German_Purchasing_Page + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,family = binomial, d)
+
+stargazer(glm.format_50,glm.origin_50,glm.desc_50,glm.all_50, coef = list(OR(glm.format_50), OR(glm.format_35), OR(glm.format_20)), p.auto = FALSE, title="Log Regression Page Format- Risk Ratios with no covariates", align=TRUE, type="text")
+
+```
 
 ##Log Regression Page Format - No covariates
 **No statistical significnace**
