@@ -26,6 +26,7 @@ d <- d[!is.na(d$Track),]
 #summary(d)
 # Counting occurances of IP address and Geo-codes
 d$geo_code <- paste(d$LocationLatitude, d$LocationLongitude)
+d = d[d$Milk_Cost <= 10.00 | (d$geo_code == 'NA NA' & d$Track!= ''),]
 dt = data.table(d)
 dt[, `freq_geo` := .N, by = geo_code]
 dt[, `freq_ip` := .N, by = IPAddress]
@@ -68,7 +69,10 @@ d[French_Purchasing_Page==1 & US_Origin==0,"French_format_wine" :=1]
 d$English_format_wine<-rep(0,length(d$French_Purchasing_Page))
 d[German_Purchasing_Page==0 & French_Purchasing_Page==0 & US_Origin==1,"English_format_wine" :=1]
 
+
 ```
+
+
 
 #Attrition
 ```{r} 
@@ -187,7 +191,7 @@ stargazer(rlm.saturated, align=TRUE,type="text", title = "RLM regressions- satur
 **TrackFrench_English_long  significant at 10% level** --Didnt Replicate for Launch 2
 ```{r}
 
-rlm.saturated<-rlm(Guess_the_Cost~ Track,d)
+rlm.saturated<-lm(Guess_the_Cost~ Track,d)
 
 stargazer(rlm.saturated, align=TRUE,type="text", title = "RLM regressions- track with no covariates")
 ```
@@ -198,7 +202,7 @@ stargazer(rlm.saturated, align=TRUE,type="text", title = "RLM regressions- track
 **Statistical Significance at the 10% level for Long Description** - --Didnt Replicate for Launch 2
 
 ```{r}
-rlm.interactions<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description + US_Origin * Long_Description + French_Purchasing_Page * US_Origin * Long_Description + German_Purchasing_Page* US_Origin * Long_Description,d)
+rlm.interactions<-lm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description + US_Origin * Long_Description + French_Purchasing_Page * US_Origin * Long_Description + German_Purchasing_Page* US_Origin * Long_Description,d)
 
 stargazer(rlm.interactions, align=TRUE,type="text", title = "RLM regression- with interactions")
 ```
@@ -211,11 +215,11 @@ stargazer(rlm.interactions, align=TRUE,type="text", title = "RLM regression- wit
 **Statistical Significance at the 10% level for German Purchasing Page (regression without origin)** --Didnt Replicate for Launch 2
 
 ```{r}
-rlm.i1<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin,d)
+rlm.i1<-lm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin,d)
 
-rlm.i2<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description,d)
+rlm.i2<-lm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description,d)
 
-rlm.i3<- rlm(Guess_the_Cost~ US_Origin + Long_Description + US_Origin * Long_Description, d)
+rlm.i3<- lm(Guess_the_Cost~ US_Origin + Long_Description + US_Origin * Long_Description, d)
 
 stargazer(rlm.i1, rlm.i2, rlm.i3, align=TRUE,type="text", title = "RLM regression- with interactions")
 ```
@@ -226,11 +230,11 @@ stargazer(rlm.i1, rlm.i2, rlm.i3, align=TRUE,type="text", title = "RLM regressio
 **Statistical Significance at the 10% level for interaction term Long Description with US Origin (regression without language format)** --Didnt Replicate for Launch 2
 
 ```{r}
-rlm.i1<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d) 
+rlm.i1<-lm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d) 
 
-rlm.i2<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
+rlm.i2<-lm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
 
-rlm.i3<- rlm(Guess_the_Cost~ US_Origin + Long_Description + US_Origin * Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, d)
+rlm.i3<- lm(Guess_the_Cost~ US_Origin + Long_Description + US_Origin * Long_Description + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, d)
 
 stargazer(rlm.i1, rlm.i2, rlm.i3, align=TRUE,type="text", title = "RLM regression- with interactions")
 ```

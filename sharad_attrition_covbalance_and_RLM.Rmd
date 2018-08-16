@@ -2,7 +2,9 @@
 title: "sharad_rml"
 author: "Sharad Varadarajan"
 date: "August 14, 2018"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -91,7 +93,7 @@ LR_descrip <- glm (Finished ~ Long_Description, data=d, family = binomial)
 
 stargazer(lm_attrit_format,lm_attrit_origin,lm_attrit_descrip, title="Attrition Regressions-OLS", align=TRUE, type="text")
 
-stargazer(LR_format, LR_origin, LR_descrip, coef = list(OR(LR_format), OR(LR_origin), OR(LR_descrip)), title="Attrition Regressions-Logistic with Odds Ratio", p.auto = FALSE, align=TRUE, type="text")
+stargazer(LR_format, LR_origin, LR_descrip, type="text", coef = list(OR(LR_format), OR(LR_origin), OR(LR_descrip)), title="Attrition Regressions-Logistic with Odds Ratio", p.auto = FALSE, align=TRUE)
 ```
 
 
@@ -467,7 +469,7 @@ stargazer(glm.sat_50,glm.sat_35,glm.sat_20, coef = list(OR(glm.sat_50), OR(glm.s
 #Full Interactions without covariates
 
 **German_Purchasing_Page1:US_Origin1 significant at 5% level for $50 purchases**
-**German_Purchasing_Page1:Long_Description1 significant at 10% level for $35 purchases**
+**German_Purchasing_Page1:Long_Description1 significant at 5% level for $35 purchases**
 **German_Purchasing_Page1:US_Origin1:Long_Description1 significant at 10% level for $50 purchases**
 **German_Purchasing_Page1:US_Origin1:Long_Description1 significant at 10% level for $35 purchases**
 **Long_Description1 significant at 10% level for $35 purchases**
