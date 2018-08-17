@@ -304,6 +304,7 @@ stargazer(lm_attrit_format,lm_attrit_origin,lm_attrit_descrip, title="Attrition 
 stargazer(LR_format, LR_origin, LR_descrip, type="text", coef = list(OR(LR_format), OR(LR_origin), OR(LR_descrip)), title="Attrition Regressions-Logistic with Odds Ratio", p.auto = FALSE, align=TRUE)
 ```
 ###Heterogeneous treatment effects
+We tested for heterogeneous treatment effects using regression for those who answered "Never" for their wine purchasing behavior, and found a significant interaction with the German formatted page. This effect was not observed in the second launch, however.
 ```{r}
 d<-data.table(complete_dedup)
 d$Never_purchased<-rep(0,length(d$Purchase_Frequency))
@@ -342,6 +343,7 @@ d<- d_factor[d_factor$freq_ip==1 & d_factor$freq_geo==1]
 ```
 
 ###RI with limit on guesses
+Our first attempt to isolate a treatment effect using random inference andthe sharp null hypothesis. By nature of RI, in which a high outlier may swing the entire treatment- or control-assigned group, we limited the guesses to the bottom 95%. Using the reduced outcome set, we tested the simple treatments and our specified interaction (same format*origin) hypotheses. 
 ```{r}
 DT<-data.table(d)
 #for RI, only using the bottom 95percent
@@ -393,7 +395,6 @@ RI_chartoutput<-function(DT=RI_DT, outcome=RI_outcome, RI_feature,feature_title)
 
 ```
 
-###Basic RI for all treatments
 ```{r}
 #Formats
 par(mfrow=c(2,1))
@@ -405,17 +406,7 @@ RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$US_Origin,"US Origin (vs French)
 RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$Long_Description,"Long Description")
 
 ```
-###RI for French/German over baseline
-```{r}
-#testing RI of French/German over baseline
-par(mfrow=c(2,1))
-#French over baseline, excludes German formats
-test_table<-DT_95[German_Purchasing_Page==0]
-RI_chartoutput(DT=test_table,outcome=test_table$Guess_the_Cost,RI_feature=test_table$French_Purchasing_Page,feature_title = "French Page, Over Baseline")
-#German over baseline
-test_table<-DT_95[French_Purchasing_Page==0]
-RI_chartoutput(DT=test_table,outcome=test_table$Guess_the_Cost,RI_feature=test_table$German_Purchasing_Page,feature_title = "German Page, Over Baseline")
-```
+Sadly, we saw no significant results. On to linear regression.
 
 ##Basic LM
 ```{r}
