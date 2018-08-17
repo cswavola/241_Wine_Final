@@ -49,7 +49,7 @@ We start with some demographics question about participants primary language, in
 
 ![Page Sample](Sample_wine_page.png)
 
-In the simulated wine page, we translate all texts into the groups assigned language, and provide english translation for key elements (e.g. flavor profile, 'top wine of the year' tag) to make sure that the respondent understand the information. All groups are shown the exact same wine (which was a hypothetical wine fabricated by us), and the same descriptive information. 
+In the simulated wine page, we translate all texts into the groups assigned language, and provide english translation for key elements (e.g. flavor profile, 'top wine of the year' tag) to make sure that the respondent understand the information. All groups are shown the exact same wine (which was a hypothetical wine fabricated by us), and the same descriptive information. We made the decision to present the page entirely in French or German for related tracks because we wanted to make sure participants notice our language treatment.
 
 We then ask the respondents to guess the cost of the wine. This is an un-anchored direct pricing question, aimed to understand respondents' first perception of the wine shown. Afterwards, we use a simplified version of the Gabor Granger method developed by André Gabor and C. W. J. Granger in the 1960s [^4]. In this method, we ask respondents whether they would consider purchase the shown wine at $50. If respondents say now, we ask the same question at a lower price point of $35. If they still answers no, we lower the price further to $20. Through this series of 3 questions, we seek to understand where their true willingness-to-pay lies. We selected the 3 price points to cover a wide range of potential willingness-to-pay, and validated our choice through a pilot study of 100 respondents. From the pilot, we saw that most respondents' willingness to pay fall into the 20-50 price range.
 
@@ -62,9 +62,10 @@ However, to validate the findings from this main sample, we collected another (s
 In our second launch, we maintained the same survey experience by asking exactly the same questions in the same sequence. However, we did introduce a baseline question at the very end of the second survey, asking respondents to estimate the price of a gallon of milk. Because this question came at the very end of the survey, it should not interfere with our treatment, and would not create any difference between the data from first and second launch. However, having this baseline questions helps us establish a reference price points for respondents price guesses, and adjust for any overall inflated / deflated guesses.
 
 ## Survey data cleaning and analysis
+We first load the data gathered in the survey. We first go through some general data processing: we need to factorize some of the answers from demographics questions, and turn some other results into binary (0,1) variables for easier handling.
+
 ```{r, echo=FALSE}
 d = read.csv('1st_Launch_Full.csv')
-#d = d[d$Guess_the_Cost <= 2000,]
 # load packages 
 library(data.table)
 library(dplyr)
@@ -76,6 +77,7 @@ library(multiwayvcov)
 library(stargazer)
 library(ggplot2)
 ```
+
 ```{r, include=FALSE}
 #Functions for later use
 standard_conf_int_95 = function(regression, n){
@@ -85,6 +87,7 @@ standard_conf_int_95 = function(regression, n){
   return (c(lower_bound,upper_bound))
 }
 ```
+
 ```{r, include=FALSE}
 #Process/clean variables- covariates
 d<-data.table(d)
@@ -132,8 +135,10 @@ demographics<-list(d$English_as_primary,d$Male,d$Household_Income,d$Speaks_Germa
 #demographics_labels[1]
 ```
 
-#1. EDA and Cleaning
+##1. EDA and Cleaning
 ##Pre-cleaning
+Now that we've loaded the data, we look at some description statistics to understand our general results, and identify any potential issues that requires cleaning, or additional processing.
+
 ```{r}
 d<-data.table(d)
 demographics=data.table(d[,.(English_as_primary,Male,Household_Income,Speaks_German,Speaks_French,Drink_Frequency,Cab_Preference,Purchase_Frequency)])
@@ -152,11 +157,22 @@ for (i in (1:length(names(demographics)))){
 
 ```
 
+After a general overview, we noticed the following things that require attention: 
+
+1). There were ~5% attrition (i.e. 5% of the respondents did not finish their survey). The attrition we see falls into 2 types: pre-treatmenet attrition and post-treatment attrition. For pre-treatment attrition, we proceeded to clean them out completely, because these respondents were not exposed to treatment yet, and their dropping off can't have anything to do with treatment we introduce. Dropping them will not create bias in our data. For post-treatment attrition, we wanted to be more careful. We will examine them later on to understand whether we have differential attrition based on treatment assigned.
+
+2). There are ~1/3 of respondents that have duplicated IP address and/or geographical coordinates (latitude and longitude). We are worried about these responses because they might be repeat survey takers (that potentially got exposure to more than one treatment), or they might be bots or click farms that do not answer surveys seriously. We proceed to clean out all responses that does not have unique ip addresses and/or geographical coordinates.
+
+3). As seen from the histogram above, we noticed that we have many large outliers for guess-the-cost. The large variation in the answer will hurt our ability to obtain a reasonable SD and find significant findings. We need to pay special attenion in our modeling phase later, to try to minize the effect of outliers.
+
+We proceed with cleaning as mentioned above.
+
 ###deduping/cleaning
 ```{r deduping}
 # Cleaning out incomplete responses before treament exposures
 d <- d[!is.na(d$Track),]
 #summary(d)
+
 # Counting occurances of IP address and Geo-codes
 d$geo_code <- paste(d$LocationLatitude, d$LocationLongitude)
 dt = data.table(d)
@@ -164,16 +180,16 @@ dt[, `freq_geo` := .N, by = geo_code]
 dt[, `freq_ip` := .N, by = IPAddress]
 #class(as.data.frame(dt))
 #dt
-## Creatig 2 dedupped dataset, one with complete dedup where we do not allow any duplicates in IP or Geo code, and one where we exclude IP dupes, but allow up to 5 dups per geo code
-#complete_dedup<- dt[dt$freq_ip==1 & dt$freq_geo==1]
+## Creatig dedupped dataset where we do not allow any duplicates in IP or Geo code
+
 complete_dedup<- dt[dt$freq_ip==1 & (dt$freq_geo == 1 | (dt$geo_code == 'NA NA' & Track!= ''))]
-#nrow(complete_dedup)
-five_or_less_dedup <- dt[dt$freq_ip==1 & dt$freq_geo<=5]
-#nrow(five_or_less_dedup)
+
 d<-complete_dedup
 ```
 
-##Post cleaning
+After the cleaning, we look at the descriptive statistics on our outcome and demographics variables again. Here we see that cleaning reduced our outlier problem significantly, although it still exist. 
+
+### Post cleaning
 ```{r}
 d<-data.table(d)
 demographics=data.table(d[,.(English_as_primary,Male,Household_Income,Speaks_German,Speaks_French,Drink_Frequency,Cab_Preference,Purchase_Frequency)])
@@ -194,7 +210,8 @@ for (i in (1:length(names(demographics)))){
 ```
 
 
-###Now looking at Outcome Variables
+We dive a bit deeper into the guess-the-cost results, and see whether our treatment effect is obvious through histograms.
+
 ```{r}
 d<-data.table(complete_dedup)
 #back to factors
@@ -203,7 +220,6 @@ d$German_Purchasing_Page <- factor(d$German_Purchasing_Page)
 d$US_Origin <-factor(d$US_Origin)
 d$Long_Description <-factor(d$Long_Description)
 
-summary(d$Guess_the_Cost)
 #hist, includes all cleaned 
 hist(d$Guess_the_Cost,main="All conditions",xlab= "Guessed cost", xlim = c(0,100),breaks=1000)
 abline(v = mean(d$Guess_the_Cost), col = "blue")
@@ -217,8 +233,6 @@ hist(d$Guess_the_Cost[d$French_Purchasing_Page == 1],main = "French format",xlab
 abline(v = mean(d$Guess_the_Cost[d$French_Purchasing_Page == 1]), col = "blue")
 abline(v = median(d$Guess_the_Cost[d$French_Purchasing_Page == 1]), col = "green")
 
-d$Guess_the_Cost[d$German_Purchasing_Page == 1]
-head(d)
 hist(d$Guess_the_Cost[d$German_Purchasing_Page == 1], main = "German format",xlab= "Guessed cost", xlim = c(0,100),breaks=1000)
 abline(v = mean(d$Guess_the_Cost[d$German_Purchasing_Page == 1]), col = "blue")
 abline(v = median(d$Guess_the_Cost[d$German_Purchasing_Page == 1]), col = "green")
@@ -254,8 +268,14 @@ hist(d_chart,main = "Long Description",xlab= "Guessed cost", xlim = c(0,100),bre
 abline(v = mean(d_chart), col = "blue")
 abline(v = median(d_chart), col = "green")
 ```
-#Experimental Assumptions
-###Demographic/Covariate Balance Check
+From these historgrams of the answers, we don't observe a very apparent difference based on page lanugae, country of origin, or length of description. This is not to say that we don't have any treatment effect, it's that the effect that our treament have may be too small to appear in these visualization.
+
+##2 Experimental Assumptions
+
+Before we start our modeling, we wanted to first validate our experimental assumptions, including conducting a covariance balance check, a check on potential differential attrition, and a check for potential heterogeneous treatment effect.
+
+### Demographic/Covariate Balance Check
+We start with the covariate balance check. Here we use an f test to see whether our covariates has any prediction power on which treatment track a respondent is assigned to.
 
 ```{r}
 #d$Cab_Preference = factor(d$Cab_Preference)
@@ -278,8 +298,11 @@ stargazer(French_cb,German_cb,Origin_cb,Description_cb,align=TRUE,type="text")
 
 d<-data.table(complete_dedup)
 ```
+Based on the table above, we conclude that our data passes covariance balance check. No covariates has 1% p value in predicting any of the treatment variable, and the three 5-10% significant covariate is likely due to chance, given the large number of covariates that we are including. Since our randomization is done through a randomizer in the qualtrics platform, we also trust that our randomization is successful.
 
-###Attrition check
+### Attrition check
+
+As mentioned in the begining, our attrition is rather low for the entire study (~5%), so we are not very concerned about potential bias caused by potential differential attrition. However, we decided to do a check for completeness. Here, we use both linear regression and logistic regression (since outcome variable is binary) to check whether being assigned to certain treamtent leads to more or less attrition than others.
 ```{r} 
 OR = function(regr){
   return(exp(coef(regr)))
@@ -303,8 +326,12 @@ stargazer(lm_attrit_format,lm_attrit_origin,lm_attrit_descrip, title="Attrition 
 
 stargazer(LR_format, LR_origin, LR_descrip, type="text", coef = list(OR(LR_format), OR(LR_origin), OR(LR_descrip)), title="Attrition Regressions-Logistic with Odds Ratio", p.auto = FALSE, align=TRUE)
 ```
-###Heterogeneous treatment effects
-We tested for heterogeneous treatment effects using regression for those who answered "Never" for their wine purchasing behavior, and found a significant interaction with the German formatted page. This effect was not observed in the second launch, however.
+
+For the regression tables below, we see that both linear and logistic regression suggest that seeing French or German purchasing page made people more likely to drop off. In other words, we do find evidence for differential attrition. However, since our attrition rate is very low, even if the 5% that dropped out have very extreme outcomes, they are unlikely to bias our estimate too significantly. Therefore, we are not very concerned about this effect.
+
+### Heterogeneous treatment effects
+We tested for heterogeneous treatment effects using regression for those who answered "Never" for their wine purchasing behavior. We hypothesized that people that never purchase wine may have a rather un-firm value perception of wine, and may be influenced by our treatment more easily. In our test, we found a significance in the interaction term between never-pruchase and German language, which does suggest the presence of HTE. However, this effect was not observed in the second launch.
+
 ```{r}
 d<-data.table(complete_dedup)
 d$Never_purchased<-rep(0,length(d$Purchase_Frequency))
@@ -328,8 +355,13 @@ summary(lm.cv_HTE)
 
 ```
 
-##Simplistic regressions
-```{r}
+
+# Modeling
+
+##1 RI with limit on guesses
+Our first attempt to isolate a treatment effect using random inference andthe sharp null hypothesis. By nature of RI, in which a high outlier may swing the entire treatment- or control-assigned group, we limited the guesses to the bottom 95%. Using the reduced outcome set, we tested the simple treatments and our specified interaction (same format*origin) hypotheses. 
+```{r echo=False}
+##Dedupping the factorized table to use for RI
 #Convert data to omit na's (attrition)
 d<- d_factor[!is.na(d_factor$Track),]
 # Counting occurances of IP address and Geo-codes
@@ -342,8 +374,6 @@ d<- d_factor[d_factor$freq_ip==1 & d_factor$freq_geo==1]
 
 ```
 
-###RI with limit on guesses
-Our first attempt to isolate a treatment effect using random inference andthe sharp null hypothesis. By nature of RI, in which a high outlier may swing the entire treatment- or control-assigned group, we limited the guesses to the bottom 95%. Using the reduced outcome set, we tested the simple treatments and our specified interaction (same format*origin) hypotheses. 
 ```{r}
 DT<-data.table(d)
 #for RI, only using the bottom 95percent
@@ -408,7 +438,7 @@ RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$Long_Description,"Long Descripti
 ```
 Sadly, we saw no significant results. On to linear regression.
 
-##Basic LM
+##2 Basic LM
 ```{r}
 #basic and covariate models
 lm.basic_format<-lm(Guess_the_Cost~French_Purchasing_Page+German_Purchasing_Page,d)
@@ -424,7 +454,8 @@ lm.cv_all<-lm(Guess_the_Cost~French_Purchasing_Page+German_Purchasing_Page+US_Or
 stargazer(lm.basic_format,lm.basic_origin,lm.basic_description,lm.basic_all,align=TRUE,type="text")
 stargazer(lm.cv_format,lm.cv_origin,lm.cv_description,lm.cv_all,align=TRUE,type="text")
 ```
-###LM with interactions
+
+##3 LM with interactions
 ```{r}
 d$same_format_origin<-rep(0,length(d$French_Purchasing_Page))
 d[French_Purchasing_Page==1 & US_Origin==0,same_format_origin :=1]
@@ -629,3 +660,24 @@ glm.desc_20<-glm(Purchase_20~ Long_Description, family = binomial,d)
 
 stargazer(glm.desc_50,glm.desc_35,glm.desc_20, coef = list(OR(glm.desc_50), OR(glm.desc_35), OR(glm.desc_20)), p.auto = FALSE, title="Log Regression Wine Description- Risk Ratios with no covariates", align=TRUE, type="text")
 ```
+
+
+## Insert data from 2nd launch, and 2 test models from 2nd launch & verbiage
+
+
+
+
+# Conclusion
+The one significant finding that we have that persisted in both main and validation study (although only at 10%) is the positive impact of French wine in French purchasing page. We found that this combintion drives up purchase likelihood at $20. Advertsing in French for a entry-level French wine may be a good idea for businesses (further validation needed).
+
+Having gone through the study, we learned a lot about experimental design, and if we were to do the study again, we would improve oru design in the following ways:
+
+1. Introducing a baseline question in main study. The milk-cost baseline question helped us control for some outlier answer, especially those caused by currency perception. Having this in the main study would definitely help in our modeling process.
+
+2. Limiting geographical location of respondents. In mechanical Turk, we did not limit to only US respondents, for fear that we may not achieve our ambitious sample on time. If time permits, this limitation would be useful because it will then eliminate currency bias.
+
+3. Increasing sample size, especially in validation study. The large variation we see in responses also calls for large sample sizes. If we have enough time and resources, gathering a larger sample helps increase statistical power.
+
+4. Changing treatment dosage. For this treatment, we used the "maximum dosage possible" by translating everything into the treatment language. This may have overwhelmed or confused respondents, which lead to some differential attrition. In a future study, it may be wise to reduce the treatment dosage to a more manageable way (e.g. only translating flavor profile and tagline),
+
+5. Redesigning the guess-the-cost question. We liked the question because it is completely unanchored, which allowed us to find psychological price thresholds (like $20). however, for nature of this question is outlier prone. In a new study, we may consider changing this question type, or at least putting a maximum answer threshold on guess-the-cost questions implicitly, without anchoring respondents. Having an implicit max price (the highest price imaginable for a wine, say 300), where only people that entered more than the value would see, may help us reduce the magnitude of outliers.
