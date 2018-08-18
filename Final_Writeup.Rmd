@@ -460,6 +460,7 @@ Sadly, we saw no significant results. On to linear regression.
 ##2 Model Evaluation Strategy
 
 The first outcome of interest was respondents guesses for the price of a wine. Initially, the team wanted to see how standard OLS regressions would perform with our data. We were not very optimistic based on the considerable variance observed from our earlier descriptive statistics. Preliminary models that we built reinforced this concern. The table below contains simple OLS models where we used only the treatment variables as predictors. As you can see from the table below, the most simplistic of regressions were returning large standard errors.  
+
 ```{r, echo=FALSE, results= 'asis'}
 #basic and covariate models
 lm.basic_format<-lm(Guess_the_Cost~French_Purchasing_Page+German_Purchasing_Page,d)
@@ -475,27 +476,6 @@ lm.cv_all<-lm(Guess_the_Cost~French_Purchasing_Page+German_Purchasing_Page+US_Or
 stargazer(lm.basic_format,lm.basic_origin,lm.basic_description,lm.basic_all, column.sep.width = "1pt" , type="latex", font.size = "scriptsize", header = F)
 #stargazer(lm.cv_format,lm.cv_origin,lm.cv_description,lm.cv_all,align=TRUE,type="text")
 ```
-
-After running a few more models with covariates, the team realized that these large standard errors were going to be an issue in all OLS regression models we run. Therefore, the team decided to go with a different strategy to evaluate a treatment effect for this outcome, and that was through Robust Linear Models. The idea of this model is to weigh observations differently based on how high their residuals are. We viewed this a compromise between eliminating extreme guesses entirely from the analysis and treating all price guesses equally like we would in OLS regression.
-
-For the second outcome of interest, the team decided to evaluate three different outcomes of willingness to purchase. Since our outcomes for each of these 3 price points are binary, we decided to use binomial logistic regression as our method of analysis. With regards to the output of logistic regression models, the team chose to exponentiate the coefficients, as we could then interpret effects as the odds of purchasing the wine at a certain price point (odds ratio). The team also considered using an ordinal logistic regression instead, and looking at maximum pricepoint at which individuals would purchase; however we did not believe the levels of our willingness to purchase outcome met the conditions of the  proportional odds assumptions. Therefore we thought it would be more prudent to use binary logistic regression with three separate outcomes. 
-
-## Model Matrix  
-
-[INSERT TABLE FROM PRESENTATION]
-
-The matrix above describes the different RLM and Logistic regression models we ran on our training set. Each column describes the details of predictors we used in the model, and each row describes the outcome variable for the model and whether or not covariates were included:
-
-1) The left-hand side of the table pertains to our most simple models, where we only used the treatment variables as predictors without any interactions  
-2) For Isolated Interactions we only examined the effect of treatment where the wine origin and purchasing page format are the same. For example the effect of French origin-French language treatment, or US origin-English language treatment.  
-3) For pairwise interaction models, we would include only 2 of 3 treatments per model and observe their dynamic. For example, one model could include language format and description length as predictors, as well as their interaction, regardless of the origin of the wine.
-4) For the fully saturated models, we included each of the treatment variables, and all pairwise and three-prong intereactions between treatment.  
-
-The exact model equations can be found in Appendix A.
-
-
-On the left-hand side of the table there is a box stating, “No Statistically Significant Findings” and that pertains to the most simplistic regressions we ran. We found significance in Now with these more detailed models, the team started to uncover some findings that are significant at 10% level and others at the 5% level.  For brevity I want to direct your attention to the two findings we found most interesting. The first was the positive effect of the interaction between French Format and French Origin on the willingness to purchase at $20.  This made a lot of sense to us, considering that adding French language to describe a French wine could possibly attribute more authenticity to the wine. The second model of interest was the fully saturated model where there was a negative effect of the interaction between German Format and Long Description on the willingness to purchase at $35. But when you add US origin as a third piece to that interaction, the effect switched 
-
 
 ```{r, include = FALSE}
 d$same_format_origin<-rep(0,length(d$French_Purchasing_Page))
@@ -515,11 +495,32 @@ lm.same_indiv<-lm(d$Guess_the_Cost ~ French_format_wine + English_format_wine + 
 stargazer(lm.same,lm.same_indiv,align=TRUE,type="text")
 
 ```
+
+After running a few more models with covariates, the team realized that these large standard errors were going to be an issue in all OLS regression models we run. Therefore, the team decided to go with a different strategy to evaluate a treatment effect for this outcome, and that was through Robust Linear Models. The idea of this model is to weigh observations differently based on how high their residuals are. We viewed this a compromise between eliminating extreme guesses entirely from the analysis and treating all price guesses equally like we would in OLS regression.
+
+For the second outcome of interest, the team decided to evaluate three different outcomes of willingness to purchase. Since our outcomes for each of these 3 price points are binary, we decided to use binomial logistic regression as our method of analysis. With regards to the output of logistic regression models, the team chose to exponentiate the coefficients, as we could then interpret effects as the odds of purchasing the wine at a certain price point (odds ratio). The team also considered using an ordinal logistic regression instead, and looking at maximum pricepoint at which individuals would purchase; however we did not believe the levels of our willingness to purchase outcome met the conditions of the  proportional odds assumptions. Therefore we thought it would be more prudent to use binary logistic regression with three separate outcomes. 
+
+## Model Matrix  
+
+![Model summary](Model Summary.png)
+
+The matrix above describes the different RLM and Logistic regression models we ran on our training set. Each column describes the details of predictors we used in the model, and each row describes the outcome variable for the model and whether or not covariates were included:
+
+1) The left-hand side of the table pertains to our most simple models, where we only used the treatment variables as predictors without any interactions  
+2) For Isolated Interactions we only examined the effect of treatment where the wine origin and purchasing page format are the same. For example the effect of French origin-French language treatment, or US origin-English language treatment.  
+3) For pairwise interaction models, we would include only 2 of 3 treatments per model and observe their dynamic. For example, one model could include language format and description length as predictors, as well as their interaction, regardless of the origin of the wine.
+4) For the fully saturated models, we included each of the treatment variables, and all pairwise and three-prong intereactions between treatment.  
+
+The exact model equations can be found in Appendix A.
+
+
+On the left-hand side of the table there is a box stating, “No Statistically Significant Findings” and that pertains to the most simplistic regressions we ran. We found significance in Now with these more detailed models, the team started to uncover some findings that are significant at 10% level and others at the 5% level.  For brevity I want to direct your attention to the two findings we found most interesting. The first was the positive effect of the interaction between French Format and French Origin on the willingness to purchase at $20.  This made a lot of sense to us, considering that adding French language to describe a French wine could possibly attribute more authenticity to the wine. The second model of interest was the fully saturated model where there was a negative effect of the interaction between German Format and Long Description on the willingness to purchase at $35. But when you add US origin as a third piece to that interaction, the effect switched 
+
+
+
+
 ##RLM
 
-
-###Insert image of table from presentation
-####Explanation of RLM>LM
 #Individual Treatments- RLM regressions with no covariates
 ```{r}
 #PRE-RLM data formatting
