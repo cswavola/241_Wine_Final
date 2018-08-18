@@ -380,7 +380,8 @@ stargazer(rlm.HTE_format,rlm.HTE_origin,rlm.HTE_description, type = "latex", col
 # Modeling
 
 ##1 RI with limit on guesses
-Our first attempt to isolate a treatment effect using random inference andthe sharp null hypothesis. By nature of RI, in which a high outlier may swing the entire treatment- or control-assigned group, we limited the guesses to the bottom 95%. Using the reduced outcome set, we tested the simple treatments and our specified interaction (same format*origin) hypotheses. 
+Our first attempt to isolate a treatment effect using random inference and the sharp null hypothesis. By nature of RI, in which a high outlier may swing the entire treatment- or control-assigned group, we limited the guesses to the bottom 95%. Using the reduced outcome set, we tested the simple treatments and our specified interaction (same format*origin) hypotheses.
+
 ```{r, include=FALSE}
 ##Dedupping the factorized table to use for RI
 #Convert data to omit na's (attrition)
@@ -458,7 +459,8 @@ RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$US_Origin,"US Origin (vs French)
 RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$Long_Description,"Long Description")
 
 ```
-Sadly, we saw no significant results. On to linear regression.
+
+The results from our Random Inference attemp is in the 4 tables above. Here we see no significant result for all of the 4 treatments (French purchasing page, German purchasing page, US origin, and Long description. Therefore, sadly we could not reject the sharp null hypothese that the treatment effect is zero for all respondents. On to linear regression.
 
 ##2 Model Evaluation Strategy
 
