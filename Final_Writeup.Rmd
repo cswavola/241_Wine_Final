@@ -473,7 +473,7 @@ lm.cv_description<-lm(Guess_the_Cost~Long_Description + Male + Household_Income 
 lm.basic_all<-lm(Guess_the_Cost ~ French_Purchasing_Page+German_Purchasing_Page+US_Origin+Long_Description,d)
 lm.cv_all<-lm(Guess_the_Cost~French_Purchasing_Page+German_Purchasing_Page+US_Origin+Long_Description + Male + Household_Income + English_as_primary  + Drink_Frequency + Cab_Preference + Purchase_Frequency,DT)
 
-stargazer(lm.basic_format,lm.basic_origin,lm.basic_description,lm.basic_all, column.sep.width = "1pt" , type="latex", font.size = "scriptsize", header = F)
+stargazer(lm.basic_format,lm.basic_origin,lm.basic_description,lm.basic_all, column.sep.width = "1pt" , type="latex", font.size = "scriptsize", header = F, title = "Standard OLS Regressions")
 #stargazer(lm.cv_format,lm.cv_origin,lm.cv_description,lm.cv_all,align=TRUE,type="text")
 ```
 
@@ -492,7 +492,7 @@ d[German_Purchasing_Page==0 & French_Purchasing_Page==0 & US_Origin==1,"English_
 lm.same<-lm(Guess_the_Cost ~  same_format_origin + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency ,d)
 #summary(lm.same)
 lm.same_indiv<-lm(d$Guess_the_Cost ~ French_format_wine + English_format_wine + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
-stargazer(lm.same,lm.same_indiv,align=TRUE,type="text")
+stargazer(lm.same,lm.same_indiv,type = "latex", column.sep.width = "1pt", header = FALSE, font.size = "scriptsize")
 
 ```
 
@@ -545,7 +545,7 @@ rlm.description<-rlm(Guess_the_Cost~Long_Description,d)
 rlm.combined<-rlm(Guess_the_Cost~French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description,d)
 
 
-stargazer(rlm.combined,rlm.format,rlm.origin,rlm.description,title="RLM Basic regressions- no covariates", align=TRUE, type="text")
+stargazer(rlm.combined,rlm.format,rlm.origin,rlm.description,title="RLM Basic regressions- no covariates", type = "latex", column.sep.width = "1pt", header = FALSE, font.size = "scriptsize")
 ```
 
 #Individual Treatments- RLM regressions with covariates
@@ -563,7 +563,7 @@ rlm.cv2 <- rlm(Guess_the_Cost~ US_Origin + Male + Household_Income + English_as_
 
 rlm.cv3 <- rlm(Guess_the_Cost~ Long_Description + Male + Household_Income + English_as_primary  + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
 
-stargazer(rlm.cv, rlm.cv1, rlm.cv2, rlm.cv3, align=TRUE,type="text", title = "RLM Basic regressions- with covariates (factors omitted from table)",omit=Factors_omit)
+stargazer(rlm.cv, rlm.cv1, rlm.cv2, rlm.cv3, align=TRUE, title = "RLM Basic regressions- with covariates (factors omitted from table)",omit=Factors_omit, type = "latex", column.sep.width = "1pt", header = FALSE, font.size = "scriptsize")
 ```
 ####Comments on improvement, std error etc
 ###testing interaction hypothesis
@@ -576,7 +576,7 @@ rlm.same<-rlm(Guess_the_Cost ~ same_format_origin, d)
 
 rlm.same_indiv<-rlm(Guess_the_Cost ~ French_format_wine + English_format_wine, d)
 
-stargazer(rlm.same,rlm.same_indiv,align=TRUE,type="text")
+stargazer(rlm.same,rlm.same_indiv, type = "latex", column.sep.width = "1pt", header = FALSE, font.size = "scriptsize")
 ```
 
 
