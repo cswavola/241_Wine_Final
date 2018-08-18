@@ -396,6 +396,7 @@ d<- d_factor[d_factor$freq_ip==1 & d_factor$freq_geo==1]
 
 ```{r, echo = FALSE}
 DT<-data.table(d)
+par(mfrow=c(2,1))
 #for RI, only using the bottom 95percent
 boxplot(DT$Guess_the_Cost,horizontal = TRUE)
 title("Boxplot for Guesses including upper outliers")
@@ -438,8 +439,8 @@ return(ate_list)
 RI_chartoutput<-function(DT=RI_DT, outcome=RI_outcome, RI_feature,feature_title){
   ate_obsv<-calculate_ate(DT,outcome,RI_feature)
   ate_list<-rep_rand_Sharpnull(d,NITERS=1000,outcome,RI_feature)
-  p_value<-mean(ate_obsv<=ate_list)
-  hist(ate_list,main = sprintf("Histogram under Sharp Null \n %s: P-value %f",feature_title,p_value))
+  p_value<-format(round(mean(ate_obsv<=ate_list), digits = 2), nsmall = 2)
+  hist(ate_list,main = sprintf("Histogram under Sharp Null \n %s: P-value %s",feature_title,p_value))
   abline(v = ate_obsv, col = "blue")
   }
 
@@ -447,22 +448,22 @@ RI_chartoutput<-function(DT=RI_DT, outcome=RI_outcome, RI_feature,feature_title)
 
 ```{r, echo = FALSE}
 #Formats
-par(mfrow=c(2,1))
+par(mfrow=c(2,2), ps = 10, cex = 1, cex.main = 1)
 RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$French_Purchasing_Page,"French Purchasing Page")
 RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$German_Purchasing_Page,"German Purchasing Page")
 #Wine origin, Description
-par(mfrow=c(2,1))
+#par(mfrow=c(2,1))
 RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$US_Origin,"US Origin (vs French)")
 RI_chartoutput(DT_95,DT_95$Guess_the_Cost,DT_95$Long_Description,"Long Description")
 
 ```
 
-The results from our Random Inference attemp is in the 4 tables above. Here we see no significant result for all of the 4 treatments (French purchasing page, German purchasing page, US origin, and Long description. Therefore, sadly we could not reject the sharp null hypothese that the treatment effect is zero for all respondents. On to linear regression.
+
+The results from our Randomization Inference attempt are displayed in the 4 charts above. Here we see no statistically significant results for all of the 4 treatments (French purchasing page, German purchasing page, US origin, and Long description. Therefore, we could not reject the sharp null hypotheses that the treatment effect is zero for all respondents. The team moved on to regression models.
 
 ##2 Model Evaluation Strategy
 
-The first outcome of interest was respondents guesses for the price of a wine. Initially, the team wanted to see how standard OLS regressions would perform with our data. We were not very optimistic based on the considerable variance observed from our earlier descriptive statistics. Preliminary models that we built reinforced this concern. The table below contains simple OLS models where we used only the treatment variables as predictors. As you can see from the table below, the most simplistic of regressions were returning large standard errors.  
-
+The first outcome of interest was respondents guesses for the price of a wine. Initially, the team wanted to see how standard OLS regressions would perform with our data. We were not very optimistic based on the considerable variance observed from our earlier descriptive statistics. Preliminary models that we built reinforced this concern. The table below contains simple OLS models where we used only the treatment variables as predictors. As you can see from the table below, the most simplistic of regressions were returning large standard errors.
 ```{r, echo=FALSE, results= 'asis'}
 #basic and covariate models
 lm.basic_format<-lm(Guess_the_Cost~French_Purchasing_Page+German_Purchasing_Page,d)
@@ -498,6 +499,7 @@ stargazer(lm.same,lm.same_indiv,type = "latex", column.sep.width = "1pt", header
 
 ```
 
+
 After running a few more models with covariates, the team realized that these large standard errors were going to be an issue in all OLS regression models we run. Therefore, the team decided to go with a different strategy to evaluate a treatment effect for this outcome, and that was through Robust Linear Models. The idea of this model is to weigh observations differently based on how high their residuals are. We viewed this a compromise between eliminating extreme guesses entirely from the analysis and treating all price guesses equally like we would in OLS regression.
 
 For the second outcome of interest, the team decided to evaluate three different outcomes of willingness to purchase. Since our outcomes for each of these 3 price points are binary, we decided to use binomial logistic regression as our method of analysis. With regards to the output of logistic regression models, the team chose to exponentiate the coefficients, as we could then interpret effects as the odds of purchasing the wine at a certain price point (odds ratio). The team also considered using an ordinal logistic regression instead, and looking at maximum pricepoint at which individuals would purchase; however we did not believe the levels of our willingness to purchase outcome met the conditions of the  proportional odds assumptions. Therefore we thought it would be more prudent to use binary logistic regression with three separate outcomes. 
@@ -506,7 +508,7 @@ For the second outcome of interest, the team decided to evaluate three different
 
 ![Model summary](Model Summary.png)
 
-The matrix above describes the different RLM and Logistic regression models we ran on our training set. Each column describes the details of predictors we used in the model, and each row describes the outcome variable for the model and whether or not covariates were included:
+The matrix below describes the different RLM and Logistic regression models we ran on our training set. Each column describes the details of predictors we used in the model, and each row describes the outcome variable for the model and whether or not covariates were included:
 
 1) The left-hand side of the table pertains to our most simple models, where we only used the treatment variables as predictors without any interactions  
 2) For Isolated Interactions we only examined the effect of treatment where the wine origin and purchasing page format are the same. For example the effect of French origin-French language treatment, or US origin-English language treatment.  
@@ -515,10 +517,7 @@ The matrix above describes the different RLM and Logistic regression models we r
 
 The exact model equations can be found in Appendix A.
 
-
 On the left-hand side of the table there is a box stating, “No Statistically Significant Findings” and that pertains to the most simplistic regressions we ran. We found significance in Now with these more detailed models, the team started to uncover some findings that are significant at 10% level and others at the 5% level.  For brevity I want to direct your attention to the two findings we found most interesting. The first was the positive effect of the interaction between French Format and French Origin on the willingness to purchase at $20.  This made a lot of sense to us, considering that adding French language to describe a French wine could possibly attribute more authenticity to the wine. The second model of interest was the fully saturated model where there was a negative effect of the interaction between German Format and Long Description on the willingness to purchase at $35. But when you add US origin as a third piece to that interaction, the effect switched 
-
-
 
 
 ##RLM
