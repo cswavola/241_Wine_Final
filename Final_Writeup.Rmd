@@ -282,19 +282,15 @@ Before beginning our modeling, the team proceeded to first validate our experime
 
 For a covaraite balance check, the team regressed each treatment factor against our covariates. The goal was to use the F-statistic as an indicator of whether our covariates had any explanatory power on which treatment track a respondent was assigned to. For 3 treatment factors (Origin, Language Format, Description length) with 2, 3 and 2 levels respectively, the team ended up constructing four regressions that are listed below:
 
-$$ FrenchPage = \beta_0 + \beta_1Male+\beta_2Income + \beta_3EnglishPrimary+\beta_4DrinkFrequency+\beta_5CabPreference +
-\beta_6PurchaseFrequency+u $$  (with subsetted data frame for French and English purchasing pages)  
 
-$$ GermanPage = \beta_0 + \beta_1Male+\beta_2Income + \beta_3EnglishPrimary+\beta_4DrinkFrequency+\beta_5CabPreference +
-\beta_6PurchaseFrequency+u $$  (with subsetted data frame for German and English purchasing pages)  
+$${\scriptstyle 1)FrenchPage = \beta_0 + \beta_1Male+\beta_2Income + \beta_3EnglishPrimary+\beta_4DrinkFrequency+\beta_5CabPreference + \beta_6PurchaseFrequency+u} $$  
+$$ {\scriptstyle 2)GermanPage = \beta_0 + \beta_1Male+\beta_2Income + \beta_3EnglishPrimary+\beta_4DrinkFrequency+\beta_5CabPreference + \beta_6PurchaseFrequency+u} $$  
+$${\scriptstyle 3)USOrigin = \beta_0 + \beta_1Male+\beta_2Income + \beta_3EnglishPrimary+\beta_4DrinkFrequency+\beta_5CabPreference +
+\beta_6PurchaseFrequency+u} $$  
+$$ {\scriptstyle 4)LongDescription = \beta_0 + \beta_1Male+\beta_2Income + \beta_3EnglishPrimary+\beta_4DrinkFrequency+\beta_5CabPreference +
+\beta_6PurchaseFrequency+u} $$  
 
-$$ USOrigin = \beta_0 + \beta_1Male+\beta_2Income + \beta_3EnglishPrimary+\beta_4DrinkFrequency+\beta_5CabPreference +
-\beta_6PurchaseFrequency+u $$  
-
-$$ LongDescription = \beta_0 + \beta_1Male+\beta_2Income + \beta_3EnglishPrimary+\beta_4DrinkFrequency+\beta_5CabPreference +
-\beta_6PurchaseFrequency+u $$  (with subsetted data frame for French and English purchasing pages)  
-
-In these regressions, Male, EnglighPrimary and CabPreference are binary variables. Income, Drink Frequency and Purchase Frequency represent factor vectors. After running these regressions, the p-values for each of F-statistics were all much greater than 0.05. The team concludes that our covariate balance check passes, seeing that we cannot reject the null hypothesis that all beta values are zero for these regressions.
+In these regressions, Male, EnglighPrimary and CabPreference are binary variables. Income, Drink Frequency and Purchase Frequency represent factor vectors. Equations 1 and 2 were evaluated on subsets of our original data frame. For equation 1, the data frame only contained observations where the purchasing page was in English or French. For equation 2, the data frame only contained observations where the purchasing page was in English or German. After running all four of these regressions, the p-values for each of the F-statistics were much greater than 0.05. The team concludes that our covariate balance check passes, seeing that we cannot reject the null hypothesis that all beta values are zero for these regressions.
 ```{r, include = FALSE}
 #d$Cab_Preference = factor(d$Cab_Preference)
 #d$French_Purchasing_Page = factor(d$French_Purchasing_Page)
@@ -312,7 +308,7 @@ Origin_cb = lm(US_Origin ~ Male + Household_Income + English_as_primary + Drink_
 
 Description_cb = lm(Long_Description ~ Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency, data = d)
 
-stargazer(French_cb,German_cb,Origin_cb,Description_cb,align=TRUE,type="text")
+stargazer(French_cb,German_cb,Origin_cb,Description_cb,align=TRUE,type="text", header = FALSE)
 
 d<-data.table(complete_dedup)
 ```
@@ -320,8 +316,9 @@ d<-data.table(complete_dedup)
 
 ### Attrition check
 
-As mentioned earlier, our attrition is rather low for the entire study (~5%), so we are not very concerned about potential bias caused by potential differential attrition. However, we decided to do a check for completeness. Here, we used logistic regression (since whether or not finishes the survey is binary) to check whether being assigned to certain treamtent leads to more or less attrition than others.  
-```{r, echo = FALSE} 
+As mentioned earlier, our attrition is rather low for the entire study (~5%), so we are not very concerned about potential bias caused by potential differential attrition. However, we decided to do a check for completeness. Here, we used logistic regression (since whether or not finishes the survey is binary) to check whether being assigned to certain treamtent leads to more or less attrition than others.
+
+```{r, echo = FALSE, results='asis'} 
 OR = function(regr){
   return(exp(coef(regr)))
 }
@@ -342,7 +339,7 @@ LR_descrip <- glm (Finished ~ Long_Description, data=d, family = binomial)
 
 #stargazer(lm_attrit_format,lm_attrit_origin,lm_attrit_descrip, title="Attrition Regressions-OLS", align=TRUE, type="text")
 
-stargazer(LR_format, LR_origin, LR_descrip, type="text", coef = list(OR(LR_format), OR(LR_origin), OR(LR_descrip)), title="Attrition Regressions-Logistic with Odds Ratio", p.auto = FALSE, align=TRUE)
+stargazer(LR_format, LR_origin, LR_descrip, coef = list(OR(LR_format), OR(LR_origin), OR(LR_descrip)), title="Attrition Regressions-Logistic with Odds Ratio", p.auto = FALSE, type = "latex", column.sep.width = "1pt", header = FALSE, font.size = "scriptsize")
 ```
 
 For the regression table above, we see that logistic regression suggests that seeing French or German purchasing page made people more likely to drop off. In other words, we do find evidence for differential attrition (this statistically significant finding was replicated with linear regression as well). However, since our attrition rate is very low, even if the 5% that dropped out have very extreme outcomes, they are unlikely to bias our estimate too significantly. Therefore, we are not very concerned about this effect. Additionally, when conducting a differential attrition check for our validation study, the team was not able to replicate the finding, and found no statistically significant effects. 
@@ -372,7 +369,7 @@ summary(lm.cv_HTE)
 ```
 
 ```{r, echo = FALSE, results='asis'}
-stargazer(rlm.HTE_format,rlm.HTE_origin,rlm.HTE_description, type = "latex", column.sep.width = "1pt", title =  'HTE')
+stargazer(rlm.HTE_format,rlm.HTE_origin,rlm.HTE_description, type = "latex", column.sep.width = "1pt", title =  'HTE', header = FALSE, font.size = "scriptsize")
 
 ```
 
