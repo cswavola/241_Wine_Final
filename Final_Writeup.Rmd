@@ -53,7 +53,7 @@ We start with some demographic question about participants' primary language, in
 
 In the simulated wine page, we translate all texts into the groups assigned language, and provide english translation for key elements (e.g. flavor profile, 'top wine of the year' tag) to ensure that the respondent understands the information. All groups are shown the same wine (which was a hypothetical wine fabricated by us), and the same descriptive information. We made the decision to present the page entirely in French or German for related tracks because we wanted to make sure participants noticed our language treatment.
 
-We then ask the respondents to guess the cost of the wine. This is an un-anchored direct pricing question, aimed to understand respondents' first perception of the wine shown. Afterwards, we use a simplified version of the Gabor Granger method developed by André Gabor and C. W. J. Granger in the 1960s [^4]. In this method, we ask respondents whether they would consider purchasing the shown wine at $50. If respondents say no, we ask the same question at a lower price point of $35. If they still answer no, we lower the price further to $20. Through this series of 3 questions, we seek to understand where their true willingness-to-pay lies. We selected the 3 price points to cover a wide range of potential willingness-to-pay, and validated our choice through a pilot study of 100 respondents. From the pilot, we saw that most respondents' willingness to pay fall into the 20-50 price range.
+We then ask the respondents to guess the cost of the wine. This is an un-anchored direct pricing question, aimed to understand respondents' first perception of the wine shown. Afterwards, we use a simplified version of the Gabor Granger method developed by André Gabor and C. W. J. Granger in the 1960s [^4]. In this method, we ask respondents whether they would consider purchasing the shown wine at $50. If respondents say no, we ask the same question at a lower price point of $35. If they still answer no, we lower the price further to $20. Through this series of 3 questions, we seek to understand where their true willingness-to-pay lies. We selected the 3 price points to cover a wide range of potential willingness-to-pay, and validated our choice through a pilot study of 100 respondents. From the pilot, we saw that most respondents' willingness to pay fell into the \$20-\$50 price range.
 
 [^4]: Gabor, A. and Granger, C. (1966). Price as an Indicator of Quality: Report on an Enquiry. Economica, 33(129), p.43.
 
@@ -61,11 +61,11 @@ Our survey is concluded after the treatment section for our main sample of 1200 
 
 However, to validate the findings from this main sample, we collected another (smaller) sample of 600 observations. The data from this second batch of respondents served as our validation test. By running the key models we deemed important (with statistically significant findings) from main sample with this validation data set, we can confirm that the relationship we found is real.
 
-In our second launch, we maintained the same survey experience by asking the same questions in the same sequence. However, we did introduce a baseline question at the very end of the second survey, asking respondents to estimate the price of a gallon of milk. Because this question came at the very end of the survey, it should not interfere with our treatment, and would not create any difference between the data from first and second launch. However, having this baseline questions helps us establish a reference price point for respondent's price guesses, and adjust for any overall inflated / deflated guesses.
+In our second launch, we maintained the same survey experience by asking the same questions in the same sequence. However, we did introduce a baseline question at the very end of the second survey, asking respondents to estimate the price of a gallon of milk. Because this question came at the very end of the survey, it should not interfere with our treatment, and would not create any difference between the data from first and second launch. However, having this baseline question helps us establish a reference price point for respondent's price guesses, and adjust for any overall inflated / deflated guesses.
 
 ## EDA and Data Cleansing  
 
-After loading the data gathered from our survey, we first went through some general data processing and examined descriptive statistics to better understand our general results. Table 1 and Figures 4 & 5 below helped support the team in getting a high-level summary of the data. With regards to Figure 4, the team noticed considerable variance in respondent's price perception but that the large majority of guesses fell between 1-100 dollars. This finding greatly influenced our model building decisions. With regards to Figure 5, the team was pleased to see a rather normal distribution for both purchase frequency and drink frequency. Additionally, we noticed that English was the primary language for almost all of our respondents, and that a menial number respondents were fluent in either German or French; these are encouraging statistics considering that we want to evaluate the effect of languages that are "foreign" to our users.  
+After loading the data gathered from our survey, we first went through some general data processing and examined descriptive statistics to better understand our general results. Table 1 and Figures 4 & 5 below helped support the team in getting a high-level summary of the data. With regards to Figure 4, the team noticed considerable variance in respondent's price perception but that the large majority of guesses fell between \$1-\$100 dollars. This finding greatly influenced our model building decisions. With regards to Figure 5, the team was pleased to see a rather normal distribution for both purchase frequency and drink frequency. Additionally, we noticed that English was the primary language for almost all of our respondents, and that a menial number of respondents were fluent in either German or French; these are encouraging statistics considering that we want to evaluate the effect of languages that are "foreign" to our users.  
 
 ```{r, include=FALSE}
 d = read.csv('1st_Launch_Full.csv')
@@ -168,9 +168,9 @@ After evaluating these high-level statistics, we proceeded to analyze more granu
 
 1). There was ~5% attrition (i.e. 5% of the respondents did not finish their survey). The attrition we see falls into 2 categories: pre-treatment attrition and post-treatment attrition. For pre-treatment attrition, we proceeded to clean them out completely, because these respondents were not exposed to treatment yet, and their dropping off can't have anything to do with treatment we introduce. Dropping them will not create bias in our data. For post-treatment attrition, we wanted to be more careful. We will examine these later on to understand whether we have differential attrition based on treatment assigned.
 
-2). There was ~1/3 of respondents that have duplicated IP address and/or geographical coordinates (latitude and longitude). We are worried about these responses because they might be repeat survey takers (that potentially got exposure to more than one treatment), or they might be bots or click farms that do not answer surveys seriously. We proceed to clean out all responses that do not have a unique ip addresses and/or geographical coordinates.
+2). There was ~1/3 of respondents that have duplicated IP address and/or geographical coordinates (latitude and longitude). We are worried about these responses because they might be repeat survey takers (that potentially got exposure to more than one treatment), or they might be bots or click farms that do not answer surveys seriously. We proceed to clean out all responses that do not have a unique ip address and/or geographical coordinates.
 
-3). As seen from Figure 4, we reiterate that we noticed many large outliers for guess-the-cost. The large variation in the answers will hurt our ability to obtain a reasonable standard error and find significant findings. We need to pay special attenion in our modeling phase later, to try to minize the effect of outliers.
+3). As seen from Figure 4, we reiterate that we noticed many large outliers for guess-the-cost. The large variation in the answers will hurt our ability to obtain a reasonable standard error and find significant findings. We need to pay special attenion in our modeling phase later, to try to minimize the effect of outliers.
   
 
 ```{r deduping, include = FALSE}
@@ -198,7 +198,7 @@ After cleaning the data, we analyzed the previous descriptive statistics once mo
 d<-data.table(d)
 demographics=data.table(d[,.(English_as_primary,Male,Household_Income,Speaks_German,Speaks_French,Drink_Frequency,Cab_Preference,Purchase_Frequency)])
 
-stargazer(d[,.(Guess_the_Cost,Purchase_50,Purchase_35,Purchase_20)],type="latex",title = "Output variables, Pre-Cleaning", header = F)
+stargazer(d[,.(Guess_the_Cost,Purchase_50,Purchase_35,Purchase_20)],type="latex",title = "Output variables, Post-Cleaning", header = F)
 hist(d$Guess_the_Cost[d$Guess_the_Cost],main="Guess the cost, Post-Cleaning",breaks=100,xlab= "Guessed cost")
 ```
 
@@ -281,7 +281,7 @@ From these historgrams of the answers, we don't observe a very apparent differen
 
 ## Experimental Assumptions
 
-Before beginning our modeling, the team proceeded to first validate our experimental assumptions, including conducting a covariance balance check, a check for potential differential attrition, and a check for potential heterogeneous treatment effects.
+Before beginning our modeling, the team proceeded to first validate our experimental assumptions, including conducting a covariate balance check, a check for potential differential attrition, and a check for potential heterogeneous treatment effects.
 
 ### Demographic/Covariate Balance Check  
 
@@ -321,7 +321,7 @@ d<-data.table(complete_dedup)
 
 ### Attrition check
 
-As mentioned earlier, our attrition is rather low for the entire study (~5%), so we are not very concerned about potential bias caused by possible differential attrition. However, we decided to do a check for completeness. Here, we used logistic regression (since whether or not a respondent finishes the survey is binary) to check whether being assigned to certain treamtent leads to more or less attrition than others.
+As mentioned earlier, our attrition is rather low for the entire study (~5%), so we are not very concerned about potential bias caused by possible differential attrition. However, we decided to do a check for completeness. Here, we used logistic regression (since whether or not a respondent finishes the survey is binary) to check whether being assigned to certain treatment leads to more or less attrition than others.
 
 ```{r, echo = FALSE, results='asis'} 
 OR = function(regr){
@@ -347,7 +347,7 @@ LR_descrip <- glm (Finished ~ Long_Description, data=d, family = binomial)
 stargazer(LR_format, LR_origin, LR_descrip, coef = list(OR(LR_format), OR(LR_origin), OR(LR_descrip)), title="Attrition Regressions-Logistic with Odds Ratio", p.auto = FALSE, type = "latex", column.sep.width = "1pt", header = FALSE, font.size = "tiny")
 ```
 
-After exponentiating the output coefficients, we saw from Table 3 that respondents assigned the French or German purchasing page were around 3 times more likely to drop off before finishing (compared to those assigned the English purchasing page). In other words, we do find evidence for differential attrition (this statistically significant finding was replicated with linear regression as well). However, since our attrition rate is very low, even if the 5% that dropped out have very extreme outcomes, they are unlikely to bias our estimate too much. Therefore, we are not very concerned about this effect. Additionally, when conducting a differential attrition check for our validation study, the team was not able to replicate the finding, and found no statistically significant effects. 
+After exponentiating the output coefficients, we saw from Table 3 that respondents assigned the French or German purchasing page were around 3 times less likely to finish the survey (compared to those assigned the English purchasing page). In other words, we do find evidence for differential attrition (this statistically significant finding was replicated with linear regression as well). However, since our attrition rate is very low, even if the 5% that dropped out have very extreme outcomes, they are unlikely to bias our estimate too much. Therefore, we are not very concerned about this effect. Additionally, when conducting a differential attrition check for our validation study, the team was not able to replicate the finding, and found no statistically significant effects. 
 
 ### Heterogeneous treatment effects
 We tested for heterogeneous treatment effects using regression for those who answered "Never" for their wine purchasing behavior. We hypothesized that people that never purchase wine may have a rather un-firm value perception of wine, and may be influenced by our treatment more easily. In Table 4, we observe a significance in the interaction term between never-purchase and German language, which does suggest the presence of HTE.  
@@ -382,7 +382,7 @@ stargazer(rlm.HTE_format,rlm.HTE_origin,rlm.HTE_description, type = "latex", col
 ## Modeling
 
 ### RI with limit on guesses
-Our first attempt to isolate a treatment effect was by using randomization inference and the sharp null hypothesis. By nature of RI, in which a high outlier may swing the entire treatment- or control-assigned group, we limited the guesses to the bottom 95%. Using the reduced outcome set, we tested the simple treatments and our specified interaction (same format*origin) hypotheses, the results of which can be seen in Figures 9 and 10.
+Our first attempt to isolate a treatment effect was by using randomization inference and the sharp null hypothesis. By nature of RI, in which a high outlier may swing the entire treatment or control group, we limited the guesses to the bottom 95%. This does not bias our results because in RI, the eliminated outliers have equal chances of falling into treatment or control. Using the reduced outcome set, we tested the simple treatments and our specified interaction (same format*origin) hypotheses, the results of which can be seen in Figures 9 and 10.
 
 ```{r, include=FALSE}
 ##Dedupping the factorized table to use for RI
@@ -544,7 +544,7 @@ Figure 11 describes the different RLM and Logistic regression models we ran on o
 
 1) The left-hand side of the table pertains to our most simple models, where we only used the treatment variables as predictors without any interactions  
 2) For Isolated Interactions we only examined the effect of treatment where the wine origin and purchasing page format are the same. For example the effect of French origin-French language treatment, or US origin-English language treatment.  
-3) For pairwise interaction models, we would include only 2 of 3 treatments per model and observe their dynamic. For example, one model could include language format and description length as predictors, as well as their interaction, regardless of the origin of the wine.
+3) For pairwise interaction models, we would include only 2 of 3 treatments per model and observe their dynamic. For example, one model could include language format and description length as predictors, as well as their interaction, regardless of the origin of the wine.  
 4) For the fully saturated models, we included each of the treatment variables, and all pairwise and three-prong intereactions between treatment.  
 
 On the left-hand side of Figure 11 there is a box stating, “No Statistically Significant Findings” and that pertains to the most simplistic regressions we ran. For example, when trying to isolate the effect of wines of US Origin, regardless of the length of the flavor profile or purchasing page format, we saw no significance. As we move left to right on Figure 11 we come across some of our more detailed models. At this point, the team started to uncover some findings that are significant at the 10% level and others at the 5% level. For brevity, we will discuss the two findings we found most interesting. The first was the positive effect of the interaction between French Format and French Origin on the willingness to purchase at \$20.    
@@ -602,7 +602,7 @@ The results in Table 8 indicate that a respondent was about 4 times less likely 
 
 ##Validation Study
 
-Based on the number of regression models listed in Figure 11, it was evident that our team evaluated many regression models. Therefore, making any causal inferences from these model results would not be prudent, considering the chances of retrieving a false positive (type II error) increases considerably when running all of these models. To avoid making false causal claims and verify that our findings were legitimate, the team re-evaluated our two findings of interest on a validation set, to see if we could replicate the direction of the effect with statistical significance. 
+Based on the size of the matrix in Figure 11, it was evident that our team evaluated many regression models. Therefore, making any causal inferences from these model results would not be prudent, considering the chances of retrieving a false positive (type II error) increases considerably when running all of these models. To avoid making false causal claims and verify that our findings were legitimate, the team re-evaluated our two findings of interest on a validation set, to see if we could replicate the direction of the effect with statistical significance. 
 
 As mentioned in the introduction, the team added a baseline price-perception question for a gallon of milk post-treatment in the validation study. By adding this baseline question, the team was able to gauge whether or not a respondent was providing guesses for cost in terms of US currency; we chose to remove all observations where respondents guessed over $10 for a gallon of milk, with the hope of ridding ourselves of harmful outliers for our outcome variables. While this method helped remove many inflated guesses, there were still a number of outliers remaining in our dataset. Therefore, the team continued with RLM instead of OLS regressesion for our Guess the Price outcome variable. 
 
@@ -680,7 +680,7 @@ d$Purchase_Frequency = as.character(d$Purchase_Frequency)
 
 After re-running the two models of interest from the training study, we observed the following results on our validation set:  
 
-1) Respondents were 2.252 times more likely (statistically significant at 10%) to purchase a wine of French Origin-French Format for \$20 than respondents who saw a wine of English Origin-French Format. While the direction and relative magnitude of the effect persisted in the validation study, the statistical significance dropped from 5% to 10%.   
+1) Respondents were 2.252 times more likely (statistically significant at 10%) to purchase a wine of French Origin-French Format for \$20 than respondents who saw a wine of English Origin-French Format. While the direction and relative magnitude of the effect persisted from the main study, the statistical significance dropped from 5% to 10% in the validation study.   
 2) Respondents were 1.592 times more likely (not statistically significant) to purchase a wine with German Language-Long Description-French Origin for \$35 than respondents who saw a wine of English Language-Long Description-French Origin. Compared to what we observed in the training study, the direction of the effect flipped and the magnitude of the effect dropped considerably. Additionally, the finding was no longer statistically significant. 
 
 
