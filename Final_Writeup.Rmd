@@ -144,7 +144,7 @@ demographics<-list(d$English_as_primary,d$Male,d$Household_Income,d$Speaks_Germa
 d<-data.table(d)
 demographics=data.table(d[,.(English_as_primary,Male,Household_Income,Speaks_German,Speaks_French,Drink_Frequency,Cab_Preference,Purchase_Frequency)])
 stargazer(d[,.(Guess_the_Cost,Purchase_50,Purchase_35,Purchase_20)],type="text",title = "Output variables, Pre-Cleaning")
-stargazer(d[,.(English_as_primary,Male,Household_Income)], type = "text")
+#stargazer(d[,.(English_as_primary,Male,Household_Income)], type = "text")
 hist(d$Guess_the_Cost[d$Guess_the_Cost],main="Guess the cost, Pre-Cleaning",breaks=100,xlab= "Guessed cost")
 
 ```
@@ -342,10 +342,10 @@ LR_descrip <- glm (Finished ~ Long_Description, data=d, family = binomial)
 stargazer(LR_format, LR_origin, LR_descrip, coef = list(OR(LR_format), OR(LR_origin), OR(LR_descrip)), title="Attrition Regressions-Logistic with Odds Ratio", p.auto = FALSE, type = "latex", column.sep.width = "1pt", header = FALSE, font.size = "scriptsize")
 ```
 
-For the regression table above, we see that logistic regression suggests that seeing French or German purchasing page made people more likely to drop off. In other words, we do find evidence for differential attrition (this statistically significant finding was replicated with linear regression as well). However, since our attrition rate is very low, even if the 5% that dropped out have very extreme outcomes, they are unlikely to bias our estimate too significantly. Therefore, we are not very concerned about this effect. Additionally, when conducting a differential attrition check for our validation study, the team was not able to replicate the finding, and found no statistically significant effects. 
+After exponentiating the output coefficients, we saw that logistic regression suggests respondents assigned the French or German purchasing page were around 3 times more likely to drop off before finishing (compared to those assigned the English purchasing page). In other words, we do find evidence for differential attrition (this statistically significant finding was replicated with linear regression as well). However, since our attrition rate is very low, even if the 5% that dropped out have very extreme outcomes, they are unlikely to bias our estimate too significantly. Therefore, we are not very concerned about this effect. Additionally, when conducting a differential attrition check for our validation study, the team was not able to replicate the finding, and found no statistically significant effects. 
 
 ### Heterogeneous treatment effects
-We tested for heterogeneous treatment effects using regression for those who answered "Never" for their wine purchasing behavior. We hypothesized that people that never purchase wine may have a rather un-firm value perception of wine, and may be influenced by our treatment more easily. In our test, we found a significance in the interaction term between never-pruchase and German language, which does suggest the presence of HTE. However, this effect was not observed in the second launch.
+We tested for heterogeneous treatment effects using regression for those who answered "Never" for their wine purchasing behavior. We hypothesized that people that never purchase wine may have a rather un-firm value perception of wine, and may be influenced by our treatment more easily. In our test, we found a significance in the interaction term between never-pruchase and German language, which does suggest the presence of HTE.  
 
 ```{r, include = FALSE}
 d<-data.table(complete_dedup)
@@ -573,7 +573,7 @@ stargazer(glm.same_indiv_20, coef = list(OR(glm.same_indiv_20)), p.auto = FALSE,
 ```
 
 
-The results indicated that a respondent was 2.075 times more likely (statistically significant) to purchase a wine of French Origin-French Format for \$20 than a respondent who saw a wine of English Origin-French Format. This made a lot of sense to us, considering that adding French language to describe a French wine could possibly attribute more authenticity to the wine.  
+The results indicated that a respondent was 2.075 times more likely (statistically significant at 5%) to purchase a wine of French Origin-French Format for \$20 than a respondent who saw a wine of English Origin-French Format. This made a lot of sense to us, considering that adding French language to describe a French wine could possibly attribute more authenticity to the wine.  
 
 The second model of interest was the fully saturated model where there was a negative effect involving German Format on the willingness to purchase at $35. 
 
@@ -595,14 +595,94 @@ $$
 \end{aligned}
 $$  
 
-The results indicated that a respondent was about 4 times less likely (statistically significant) to purchase a wine with German Language-Long Description-French Origin for \$35 than a respondent who saw a wine of English Language-Long Description-French Origin. Since German is not a language typically associated with wine, the team was curious whether German was the driving factor in respondents choice not to purchase the wine at \$35.  
+The results indicated that a respondent was about 4 times less likely (statistically significant at 5%) to purchase a wine with German Language-Long Description-French Origin for \$35 than a respondent who saw a wine of English Language-Long Description-French Origin. Since German is not a language typically associated with wine, the team was curious whether German was the driving factor in respondents choice not to purchase the wine at \$35.  
 
 ##Validation Study
 
 Based on the previously mentioned matrix, the team evaluated many regression models. Therefore, making any causal inferences from these model results would not be prudent, considering the chances of retrieving a false positive (type II error) increases considerably when running all of these models. To avoid making false causal claims and verify that our findings were legitimate, the team re-evaluated our two findings of interest on a validation set, to see if we could replicate the direction of the effect with statistical significance. 
 
+As mentioned in the introduction, the team added a baseline price-perception question for a gallon of milk post-treatment. By adding this baseline question, the team was able to gauge whether or not a respondent was providing guesses in terms of US currency; we chose to remove all observations where respondents guessed over $10 for a gallon of milk, with the hope of ridding ourselves of harmful outliers for our outcome variables. While this method helped remove many inflated guesses, there were still a number of outliers remaining in our dataset. Therefore, the team continued with RLM instead of OLS regressesion for our Guess the Price outcome variable. 
 
-```{r}
+After data collection and data cleansing for our validation set, the team went through the following tasks prior to model analysis:  
+
+1) Conducted a covariate balance check and confirmed there were no baseline differences between the groups (in terms of our measured covariates)  
+2) Observed that the differential attrition identified in our training set did not exist in our validation set. In fact, respondents who were assigned the French/German purchasing page treatments were less likely to attrit in our validation study compared to those assigned the English purchasing page (though not statistically significant). The direction of this differential attrition effect is opposite to what was observed in our training study.  
+3) The heterogeneous treatment effect for never-purchasers did not persist in the validation study as well
+
+```{r, include = FALSE}
+
+#DATA PREP/CLEANSING
+d = read.csv('Second_Launch_Complete.csv')
+d = d[1287:NROW(d),] #Only data from the second launch
+
+d <- d[!is.na(d$Track),]
+#summary(d)
+# Counting occurances of IP address and Geo-codes
+d$geo_code <- paste(d$LocationLatitude, d$LocationLongitude)
+d = d[d$Milk_Cost <= 10.00 | (d$geo_code == 'NA NA' & d$Track!= ''),]
+dt = data.table(d)
+dt[, `freq_geo` := .N, by = geo_code]
+dt[, `freq_ip` := .N, by = IPAddress]
+#class(as.data.frame(dt))
+#dt
+## Creatig 2 dedupped dataset, one with complete dedup where we do not allow any duplicates in IP or Geo code, and one where we exclude IP dupes, but allow up to 5 dups per geo code
+complete_dedup<- dt[dt$freq_ip==1 & (dt$freq_geo == 1 | (dt$geo_code == 'NA NA' & Track!= ''))]
+#nrow(complete_dedup)
+five_or_less_dedup <- dt[dt$freq_ip==1 & dt$freq_geo<=5]
+#nrow(five_or_less_dedup)
+d<-complete_dedup
+
+
+
+d$English_as_primary<-d[,.(abs(d$English_as_primary-2))]
+d$English_as_primary<-as.factor(d$English_as_primary)
+#Male: original, male=1, female=2
+d$Male<-d[,.(abs(d$Male-2))]
+d$Male<-as.factor(d$Male)
+#household income- as factor due to <20k, >100k, and do not answer
+d$Household_Income<-as.factor(d$Household_Income)
+
+#Drink Frequency- options are not linear 
+d$Drink_Frequency<-factor(d$Drink_Frequency)
+
+#Cab preference
+d$Cab_Preference<-d[,.(abs(d$Cab_Preference-2))]
+
+#Purchase Frequency- also not linear
+d$Purchase_Frequency<-factor(d$Purchase_Frequency)
+
+
+d$same_format_origin<-rep(0,length(d$French_Purchasing_Page))
+d[French_Purchasing_Page==1 & US_Origin==0,same_format_origin :=1]
+d[German_Purchasing_Page==0 & French_Purchasing_Page==0 & US_Origin==1,same_format_origin :=1]
+#French layout+french wine
+d$French_format_wine<-rep(0,length(d$French_Purchasing_Page))
+d[French_Purchasing_Page==1 & US_Origin==0,"French_format_wine" :=1]
+#English layout + US wine
+d$English_format_wine<-rep(0,length(d$French_Purchasing_Page))
+d[German_Purchasing_Page==0 & French_Purchasing_Page==0 & US_Origin==1,"English_format_wine" :=1]
+
+d$French_Purchasing_Page<-factor(d$French_Purchasing_Page)
+d$German_Purchasing_Page<-factor(d$German_Purchasing_Page)
+d$US_Origin <- factor(d$US_Origin)
+d$Long_Description <- factor(d$Long_Description)
+
+d$Male = as.character(d$Male)
+d$Household_Income = as.character(d$Household_Income)
+d$Cab_Preference = as.character(d$Cab_Preference)
+d$English_as_primary = as.character(d$English_as_primary)
+d$Drink_Frequency = as.character(d$Drink_Frequency)
+d$Purchase_Frequency = as.character(d$Purchase_Frequency)
+```
+
+After re-running our two models of interest we observed the following:  
+
+1) Respondents were 2.252 times more likely (statistically significant at 10%) to purchase a wine of French Origin-French Format for \$20 than respondents who saw a wine of English Origin-French Format. While the direction and relative magnitude of the effect persisted in the validation study, the statistical significance dropped from 5% to 10%.   
+2) Respondents were 1.592 times more likely (not statistically significant) to purchase a wine with German Language-Long Description-French Origin for \$35 than respondents who saw a wine of English Language-Long Description-French Origin. Compared to what we observed in the training study, the direction of the effect switched directions and the magnitude of the effect dropped considerably. Additionally, the finding was no longer statistically significant. 
+
+
+
+```{r, include=FALSE}
 Factors_omit=c("Household_Income","Household_Income2","Household_Income3","Household_Income4","Household_Income5","Household_Income6","Household_Income7","Drink_Frequency","Drink_Frequency2","Drink_Frequency3","Drink_Frequency4","Drink_Frequency5","Purchase_Frequency","Purchase_Frequency2","Purchase_Frequency3","Purchase_Frequency4","Purchase_Frequency5")
 
 
@@ -616,9 +696,8 @@ rlm.cv3 <- rlm(Guess_the_Cost~ Long_Description + Male + Household_Income + Engl
 
 stargazer(rlm.cv, rlm.cv1, rlm.cv2, rlm.cv3, align=TRUE, title = "RLM Basic regressions- with covariates (factors omitted from table)",omit=Factors_omit, type = "latex", column.sep.width = "1pt", header = FALSE, font.size = "scriptsize")
 ```
-####Comments on improvement, std error etc
-###testing interaction hypothesis
-```{r}
+
+```{r, include = FALSE}
 #Interactions - Same Format/Origin without covariates
 #**No statistical significance for treatment**
 #models
@@ -631,43 +710,29 @@ stargazer(rlm.same,rlm.same_indiv, type = "latex", column.sep.width = "1pt", hea
 ```
 
 
-
-#Saturated
-
-**No statistical significance for treatments**
-```{r}
+```{r, include = FALSE}
 d$Track<-factor(d$Track)
 
 rlm.saturated_cv<-rlm(Guess_the_Cost~ Track + Male + Household_Income + English_as_primary + Drink_Frequency + Cab_Preference + Purchase_Frequency,d)
 
 ```
 
-**TrackFrench_English_long  significant at 10% level**
-```{r}
+
+```{r, include = FALSE}
 
 rlm.saturated<-rlm(Guess_the_Cost~ Track,d)
 
 stargazer(rlm.saturated_cv,rlm.saturated, align=TRUE,type="text", title = "RLM regressions- Track",omit=Factors_omit)
 ```
-###Note that our SD's decreased w/o covariates
 
-#Full Interactions without covariates
 
-**Statistical Significance at the 10% level for Long Description**
-
-```{r}
+```{r, include = FALSE}
 rlm.interactions<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + Long_Description + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description + US_Origin * Long_Description + French_Purchasing_Page * US_Origin * Long_Description + German_Purchasing_Page* US_Origin * Long_Description,d)
 
 stargazer(rlm.interactions, align=TRUE,type="text", title = "RLM regression- with interactions")
 ```
 
-#Interaction Pairs without covariates
-
-**Statistical Significance at the 5% level for Long Description (regression without language format)**
-**Statistical Significance at the 10% level for interaction term Long Description with US Origin (regression without language format)**
-**Statistical Significance at the 10% level for German Purchasing Page (regression without origin)**
-
-```{r}
+```{r, include = FALSE}
 rlm.i1<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + US_Origin + French_Purchasing_Page * US_Origin + German_Purchasing_Page * US_Origin,d)
 
 rlm.i2<-rlm(Guess_the_Cost~ French_Purchasing_Page + German_Purchasing_Page + Long_Description + French_Purchasing_Page * Long_Description + German_Purchasing_Page * Long_Description,d)
@@ -677,11 +742,8 @@ rlm.i3<- rlm(Guess_the_Cost~ US_Origin + Long_Description + US_Origin * Long_Des
 stargazer(rlm.i1, rlm.i2, rlm.i3, align=TRUE,type="text", title = "RLM regression- with interactions")
 ```
 
-###PURCHASE LIKELIHOOD - MULTINOMIAL LOGISTIC REGRESSION
 
-**Using multinomial instead of ordinal due to the proportional odds assumption: The proportional odds assumption means that for each term included in the model, the 'slope' estimate between each pair of outcomes across two response levels are assumed to be the same regardless of which partition we consider**
-
-```{r}
+```{r, include = FALSE}
 d$max_purchase[!is.na(d$Purchase_50)] = "$0"
 d[Purchase_50==1,max_purchase:="$50"]
 d[Purchase_35==1 & Purchase_50 == 0,max_purchase:="$35"]
@@ -702,18 +764,16 @@ exp(coef(regr))
 
 ```
 
-####Trying binary logit models instead
 
-```{r}
+```{r, include = FALSE}
 #Odds Ratio
 OR = function(regr){
   return(exp(coef(regr)))
 }
 ```
 
-##Log Regression Page Format - No covariates
-**No statistical significnace**
-```{r}
+
+```{r, include = FALSE}
 glm.format_50<-glm(Purchase_50~French_Purchasing_Page + German_Purchasing_Page,family = binomial, d)
 glm.format_35<-glm(Purchase_35~French_Purchasing_Page + German_Purchasing_Page,family = binomial, d)
 glm.format_20<-glm(Purchase_20~French_Purchasing_Page + German_Purchasing_Page, family = binomial,d)
@@ -726,9 +786,7 @@ glm.format_20<-glm(Purchase_20~French_Purchasing_Page + German_Purchasing_Page, 
 stargazer(glm.format_50,glm.format_35,glm.format_20, coef = list(OR(glm.format_50), OR(glm.format_35), OR(glm.format_20)), p.auto = FALSE, title="Log Regression Page Format- Risk Ratios with no covariates", align=TRUE, type="text")
 ```
 
-##Log Regression Origin - No Covariates
-**No statistical significance**
-```{r}
+```{r, include = FALSE}
 glm.origin_50<-glm(Purchase_50~ US_Origin,family = binomial, d)
 glm.origin_35<-glm(Purchase_35~ US_Origin,family = binomial, d)
 glm.origin_20<-glm(Purchase_20~ US_Origin, family = binomial,d)
@@ -741,9 +799,7 @@ glm.origin_20<-glm(Purchase_20~ US_Origin, family = binomial,d)
 stargazer(glm.origin_50,glm.origin_35,glm.origin_20, coef = list(OR(glm.origin_50), OR(glm.origin_35), OR(glm.origin_20)), p.auto = FALSE, title="Log Regression Wine Origin- Risk Ratios with no covariates", align=TRUE, type="text")
 ```
 
-##Log Regression Description - No covariates
-**No statistical significance**
-```{r}
+```{r, include = FALSE}
 glm.desc_50<-glm(Purchase_50~ Long_Description, family = binomial, d)
 glm.desc_35<-glm(Purchase_35~ Long_Description, family = binomial, d)
 glm.desc_20<-glm(Purchase_20~ Long_Description, family = binomial,d)
@@ -755,12 +811,6 @@ glm.desc_20<-glm(Purchase_20~ Long_Description, family = binomial,d)
 
 stargazer(glm.desc_50,glm.desc_35,glm.desc_20, coef = list(OR(glm.desc_50), OR(glm.desc_35), OR(glm.desc_20)), p.auto = FALSE, title="Log Regression Wine Description- Risk Ratios with no covariates", align=TRUE, type="text")
 ```
-
-
-## Insert data from 2nd launch, and 2 test models from 2nd launch & verbiage
-
-
-
 
 # Conclusion
 The one significant finding that we have that persisted in both main and validation study (although only at 10%) is the positive impact of French wine in French purchasing page. We found that this combintion drives up purchase likelihood at $20. Advertsing in French for a entry-level French wine may be a good idea for businesses (further validation needed).
